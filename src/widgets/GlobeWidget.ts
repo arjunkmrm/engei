@@ -1,6 +1,9 @@
 /**
- * Globe widget plugin — renders an interactive WebGL globe using COBE.
+ * Globe widget plugin — renders an interactive WebGL globe using COBE v2.
  * Loads COBE (~5kB) from CDN on first use.
+ *
+ * COBE v2 API: createGlobe(canvas, opts) → { update(state), destroy() }
+ * Animation is done via requestAnimationFrame + globe.update({ phi })
  */
 
 import type { WidgetPlugin } from "../types"
@@ -41,39 +44,42 @@ export const globePlugin: WidgetPlugin = {
     let globe: any = null
     let disposed = false
     let phi = spec.phi || 0
+    let rafId = 0
 
     const isDark = theme === "dark"
-    const baseColor: [number, number, number] = isDark ? [0.18, 0.15, 0.12] : [0.9, 0.88, 0.85]
-    const glowColor: [number, number, number] = isDark ? [0.1, 0.08, 0.06] : [0.98, 0.96, 0.94]
-    const markerColor: [number, number, number] = spec.markerColor || [0.42, 0.54, 0.75] // koen blue
 
     loadCobe()
       .then((mod) => {
         if (disposed) return
         const createGlobe = mod.default || mod.createGlobe || mod
+
         globe = createGlobe(canvas, {
           devicePixelRatio: 2,
           width: size,
           height: size,
-          phi: spec.phi || 0,
+          phi: phi,
           theta: spec.theta || 0.2,
           dark: isDark ? 1 : 0,
           diffuse: 1.2,
           mapSamples: 16000,
-          mapBrightness: isDark ? 8 : 3,
-          baseColor,
-          markerColor,
-          glowColor,
+          mapBrightness: 6,
+          baseColor: isDark ? [0.3, 0.3, 0.3] : [1, 1, 1],
+          markerColor: spec.markerColor || [1, 0.5, 0.2],
+          glowColor: isDark ? [0.13, 0.11, 0.1] : [1, 1, 1],
           markers: (spec.markers || []).map((m: any) => ({
             location: m.location,
             size: m.size || 0.05,
           })),
-          onRender: (state: any) => {
-            if (disposed) return
-            state.phi = phi
-            phi += spec.rotateSpeed || 0.005
-          },
         })
+
+        // Animate with requestAnimationFrame + update()
+        function animate() {
+          if (disposed) return
+          phi += spec.rotateSpeed || 0.005
+          globe.update({ phi })
+          rafId = requestAnimationFrame(animate)
+        }
+        rafId = requestAnimationFrame(animate)
       })
       .catch((err) => {
         if (disposed) return
@@ -82,6 +88,7 @@ export const globePlugin: WidgetPlugin = {
 
     return () => {
       disposed = true
+      cancelAnimationFrame(rafId)
       globe?.destroy()
     }
   },
