@@ -1,0 +1,44 @@
+/* Default CSS variables for sono-editor (dark theme) */
+/* Override these on a parent element or :root to customize */
+
+.sono-editor, :root {
+  --editor-bg: #1a1816;
+  --editor-fg: #e8e6e3;
+  --editor-cursor: #e8e6e3;
+  --editor-selection: rgba(200, 170, 130, 0.15);
+  --editor-line-highlight: rgba(255, 255, 255, 0.03);
+  --editor-line-number: #4a4540;
+  --editor-line-number-active: #8a8078;
+  --widget-bg: #222220;
+  --widget-border: #3a3530;
+  --sidebar-bg: #1a1816;
+  --accent: #C15F3C;
+  --highlight-bg: rgba(193, 95, 60, 0.12);
+  --highlight-bg-hover: rgba(193, 95, 60, 0.20);
+  --highlight-border: rgba(193, 95, 60, 0.35);
+  --button-hover-bg: #A14A2F;
+  --icon-fg: #6A6A70;
+  --panel-bg: #1a1816;
+  --tab-fg-inactive: #888;
+}
+
+.sono-editor[data-theme="light"] {
+  --editor-bg: #faf8f5;
+  --editor-fg: #2a2520;
+  --editor-cursor: #2a2520;
+  --editor-selection: rgba(100, 80, 60, 0.12);
+  --editor-line-highlight: rgba(0, 0, 0, 0.03);
+  --editor-line-number: #b0a898;
+  --editor-line-number-active: #6a6058;
+  --widget-bg: #f0ece6;
+  --widget-border: #d8d0c8;
+  --sidebar-bg: #faf8f5;
+  --accent: #C15F3C;
+  --highlight-bg: rgba(193, 95, 60, 0.18);
+  --highlight-bg-hover: rgba(193, 95, 60, 0.30);
+  --highlight-border: rgba(193, 95, 60, 0.45);
+  --button-hover-bg: #A14A2F;
+  --icon-fg: #8a8078;
+  --panel-bg: #faf8f5;
+  --tab-fg-inactive: #999;
+}
