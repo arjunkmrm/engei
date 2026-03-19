@@ -64,19 +64,19 @@ export const chartPlugin: WidgetPlugin = {
     }
 
     // Create canvas
+    const chartType = config.type || "bar"
     const wrapper = document.createElement("div")
     wrapper.style.position = "relative"
     wrapper.style.width = "100%"
-    wrapper.style.maxWidth = "700px"
+    wrapper.style.maxWidth = ["radar", "pie", "doughnut", "polarArea"].includes(chartType) ? "500px" : "700px"
     wrapper.style.margin = "1em auto"
 
     // Calculate height based on chart type
-    const chartType = config.type || "bar"
     if (chartType === "horizontalBar" || (chartType === "bar" && config.options?.indexAxis === "y")) {
       const barCount = config.data?.labels?.length || 5
       wrapper.style.height = `${barCount * 40 + 80}px`
     } else {
-      wrapper.style.height = "300px"
+      wrapper.style.height = chartType === "radar" ? "400px" : "340px"
     }
 
     const canvas = document.createElement("canvas")
