@@ -8,6 +8,7 @@ import type { WidgetPlugin } from "../types"
 import { chartPlugin } from "./ChartWidget"
 import { mermaidPlugin } from "./MermaidWidget"
 import { diffPlugin } from "./DiffWidget"
+import { globePlugin } from "./GlobeWidget"
 
 export type WidgetHydrator = (
   container: HTMLElement,
@@ -19,16 +20,6 @@ export interface WidgetSpec {
   widgetId: string
   type: string
   [key: string]: any
-}
-
-// ─── Legacy global registry (backward compat) ───────────────
-
-const legacyRegistry = new Map<string, WidgetHydrator>()
-
-/** @deprecated Use the `widgets` prop on Editor instead. */
-export function registerWidget(type: string, hydrator: WidgetHydrator): WidgetHydrator {
-  legacyRegistry.set(type, hydrator)
-  return hydrator
 }
 
 // ─── Per-instance registry helpers ──────────────────────────
@@ -49,7 +40,7 @@ export function buildLangMap(plugins: WidgetPlugin[]): Map<string, WidgetPlugin>
 
 // ─── Default built-in widgets ───────────────────────────────
 
-const _defaults: WidgetPlugin[] = [chartPlugin, mermaidPlugin, diffPlugin]
+const _defaults: WidgetPlugin[] = [chartPlugin, mermaidPlugin, diffPlugin, globePlugin]
 
 export function getDefaultWidgets(): WidgetPlugin[] {
   return _defaults
@@ -59,21 +50,19 @@ export function getDefaultWidgets(): WidgetPlugin[] {
 
 /**
  * Find all widget placeholders in a container and hydrate them.
- * Accepts an explicit registry; falls back to the legacy global registry.
  */
 export function hydrateWidgets(
   container: HTMLElement,
   theme: "dark" | "light",
-  registry?: Map<string, WidgetHydrator>,
+  registry: Map<string, WidgetHydrator>,
 ): (() => void)[] {
-  const reg = registry ?? legacyRegistry
   const cleanups: (() => void)[] = []
   const placeholders = container.querySelectorAll<HTMLElement>("[data-widget-spec]")
 
   for (const el of placeholders) {
     try {
       const spec: WidgetSpec = JSON.parse(el.getAttribute("data-widget-spec")!)
-      const hydrator = reg.get(spec.type)
+      const hydrator = registry.get(spec.type)
       if (hydrator) {
         const cleanup = hydrator(el, spec, theme)
         if (cleanup) cleanups.push(cleanup)

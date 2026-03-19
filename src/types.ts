@@ -60,8 +60,6 @@ export interface EditorProps {
   onCreateComment?: (anchor: Anchor) => void
   /** Draft comment body submitted */
   onUpdateComment?: (commentId: string, body: string) => void
-  /** @deprecated Use onCreateComment + onUpdateComment instead */
-  onAddComment?: (anchor: Anchor, body: string) => void
   /** Comment resolved/deleted */
   onDeleteComment?: (commentId: string) => void
   /** Reply added to thread */

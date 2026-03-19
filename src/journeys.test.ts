@@ -173,7 +173,7 @@ describe("widget plugin lifecycle", () => {
 
   it("getDefaultWidgets returns chart, mermaid, diff", () => {
     const defaults = getDefaultWidgets()
-    expect(defaults.map(d => d.type)).toEqual(["chart", "mermaid", "diff"])
+    expect(defaults.map(d => d.type)).toEqual(["chart", "mermaid", "diff", "globe"])
   })
 })
 

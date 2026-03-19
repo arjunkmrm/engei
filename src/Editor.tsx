@@ -34,7 +34,6 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
   onChange,
   onCreateComment,
   onUpdateComment,
-  onAddComment, // deprecated compat
   onDeleteComment,
   onAddReply,
   onActiveCommentChange,
@@ -46,42 +45,31 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
   const contentRef = useRef(content)
   contentRef.current = content
 
-  // Imperative handle
   useImperativeHandle(ref, () => ({
     getContent: () => contentRef.current,
     focus: () => view?.focus(),
     getView: () => view,
   }), [view])
 
-  // When user clicks the comment pill in source mode
   const handleSourceComment = useCallback((from: number, to: number) => {
+    if (!onCreateComment) return
     const doc = view?.state.doc.toString() || content
-    const anchor = createAnchor(doc, from, to)
-    if (onCreateComment) {
-      onCreateComment(anchor)
-    } else if (onAddComment) {
-      onAddComment(anchor, "")
-    }
-  }, [view, content, onCreateComment, onAddComment])
+    onCreateComment(createAnchor(doc, from, to))
+  }, [view, content, onCreateComment])
 
-  // When CommentCard submits a body for a draft comment
   const handleSubmitBody = useCallback((commentId: string, body: string) => {
-    if (onUpdateComment) {
-      onUpdateComment(commentId, body)
-    } else if (onAddComment) {
-      const comment = comments.find(c => c.id === commentId)
-      if (comment) onAddComment(comment.anchor, body)
-    }
-  }, [comments, onUpdateComment, onAddComment])
+    onUpdateComment?.(commentId, body)
+  }, [onUpdateComment])
 
-  // Compat wrapper: MarkdownPreview still uses onAddComment internally
   const handlePreviewAddComment = useCallback((anchor: any, body: string) => {
-    if (body === "" && onCreateComment) {
-      onCreateComment(anchor)
-    } else if (onAddComment) {
-      onAddComment(anchor, body)
+    if (body === "") {
+      onCreateComment?.(anchor)
+    } else {
+      // Preview draft submission — find the comment and update it
+      const comment = comments.find(c => c.anchor.exact === anchor.exact && c.anchor.hint === anchor.hint)
+      if (comment) onUpdateComment?.(comment.id, body)
     }
-  }, [onCreateComment, onAddComment])
+  }, [onCreateComment, onUpdateComment, comments])
 
   const handleActiveChange = useCallback((id: string | null) => {
     onActiveCommentChange?.(id)

@@ -7,6 +7,7 @@
 import { marked } from "marked"
 import DOMPurify from "dompurify"
 import hljs from "highlight.js/lib/core"
+import { escapeHtml } from "../utils"
 import javascript from "highlight.js/lib/languages/javascript"
 import typescript from "highlight.js/lib/languages/typescript"
 import python from "highlight.js/lib/languages/python"
@@ -133,9 +134,6 @@ function processFootnotes(source: string): { processedSource: string; footnotesH
   return { processedSource: processed, footnotesHtml }
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-}
 
 function parseYamlEntries(yamlStr: string): { key: string; val: string }[] {
   const lines = yamlStr.split(/\r?\n/)

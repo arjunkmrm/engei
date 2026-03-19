@@ -4,28 +4,9 @@
  */
 
 import type { WidgetPlugin } from "../types"
+import { loadCDN } from "../utils"
 
 const CHART_JS_CDN = "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"
-
-let chartJsLoaded: Promise<void> | null = null
-
-function loadChartJs(): Promise<void> {
-  if (chartJsLoaded) return chartJsLoaded
-  if ((window as any).Chart) {
-    chartJsLoaded = Promise.resolve()
-    return chartJsLoaded
-  }
-
-  chartJsLoaded = new Promise((resolve, reject) => {
-    const script = document.createElement("script")
-    script.src = CHART_JS_CDN
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("Failed to load Chart.js"))
-    document.head.appendChild(script)
-  })
-
-  return chartJsLoaded
-}
 
 function getThemeColors(theme: "dark" | "light") {
   if (theme === "dark") {
@@ -86,15 +67,52 @@ export const chartPlugin: WidgetPlugin = {
 
     // Apply theme colors and palette to datasets
     const { textColor, gridColor } = getThemeColors(theme)
-    const datasets = (config.data?.datasets || []).map((ds: any, i: number) => ({
-      ...ds,
-      backgroundColor: ds.backgroundColor || PALETTE[i % PALETTE.length],
-      borderColor: ds.borderColor || PALETTE[i % PALETTE.length],
-      borderWidth: ds.borderWidth ?? (["line", "radar"].includes(chartType) ? 2 : 0),
-    }))
-
-    // Radial charts (pie, doughnut, polarArea, radar) don't use x/y scales
     const isRadial = ["pie", "doughnut", "polarArea", "radar"].includes(chartType)
+
+    // For radar, use translucent fill so grid lines show through
+    const datasets = (config.data?.datasets || []).map((ds: any, i: number) => {
+      const color = ds.borderColor || PALETTE[i % PALETTE.length]
+      let bg = ds.backgroundColor || PALETTE[i % PALETTE.length]
+      if (chartType === "radar" && !ds.backgroundColor) {
+        // Convert hex to rgba with low opacity
+        bg = color + "20" // ~12% opacity
+      }
+      return {
+        ...ds,
+        backgroundColor: bg,
+        borderColor: color,
+        borderWidth: ds.borderWidth ?? (["line", "radar"].includes(chartType) ? 2 : 0),
+        ...(chartType === "radar" && !ds.pointBackgroundColor ? { pointBackgroundColor: color, pointBorderColor: color, pointRadius: 4 } : {}),
+      }
+    })
+
+    // Build scales config based on chart type
+    let scales: any
+    if (chartType === "radar") {
+      scales = {
+        r: {
+          ...config.options?.scales?.r,
+          angleLines: { color: gridColor, ...config.options?.scales?.r?.angleLines },
+          grid: { color: gridColor, ...config.options?.scales?.r?.grid },
+          pointLabels: { font: { size: 12 }, color: textColor, ...config.options?.scales?.r?.pointLabels },
+          ticks: { font: { size: 10 }, color: textColor, backdropColor: "transparent", ...config.options?.scales?.r?.ticks },
+        },
+      }
+    } else if (!isRadial) {
+      scales = {
+        ...config.options?.scales,
+        x: {
+          ...config.options?.scales?.x,
+          ticks: { font: { size: 11 }, ...config.options?.scales?.x?.ticks, color: textColor },
+          grid: { ...config.options?.scales?.x?.grid, color: gridColor },
+        },
+        y: {
+          ...config.options?.scales?.y,
+          ticks: { font: { size: 11 }, ...config.options?.scales?.y?.ticks, color: textColor },
+          grid: { ...config.options?.scales?.y?.grid, color: gridColor },
+        },
+      }
+    }
 
     const themedConfig = {
       ...config,
@@ -115,28 +133,14 @@ export const chartPlugin: WidgetPlugin = {
             color: textColor,
           },
         },
-        ...(isRadial ? {} : {
-          scales: {
-            ...config.options?.scales,
-            x: {
-              ...config.options?.scales?.x,
-              ticks: { font: { size: 11 }, ...config.options?.scales?.x?.ticks, color: textColor },
-              grid: { ...config.options?.scales?.x?.grid, color: gridColor },
-            },
-            y: {
-              ...config.options?.scales?.y,
-              ticks: { font: { size: 11 }, ...config.options?.scales?.y?.ticks, color: textColor },
-              grid: { ...config.options?.scales?.y?.grid, color: gridColor },
-            },
-          },
-        }),
+        ...(scales ? { scales } : {}),
       },
     }
 
     let chartInstance: any = null
     let disposed = false
 
-    loadChartJs()
+    loadCDN(CHART_JS_CDN, "Chart")
       .then(() => {
         if (disposed) return // cleanup already ran — don't touch DOM
         const Chart = (window as any).Chart
@@ -154,6 +158,3 @@ export const chartPlugin: WidgetPlugin = {
     }
   },
 }
-
-// Backward compat: keep the old named export
-export const chartWidget = chartPlugin

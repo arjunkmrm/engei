@@ -4,28 +4,9 @@
  */
 
 import type { WidgetPlugin } from "../types"
+import { loadCDN } from "../utils"
 
 const MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
-
-let mermaidLoaded: Promise<void> | null = null
-
-function loadMermaid(): Promise<void> {
-  if (mermaidLoaded) return mermaidLoaded
-  if ((window as any).mermaid) {
-    mermaidLoaded = Promise.resolve()
-    return mermaidLoaded
-  }
-
-  mermaidLoaded = new Promise((resolve, reject) => {
-    const script = document.createElement("script")
-    script.src = MERMAID_CDN
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("Failed to load Mermaid"))
-    document.head.appendChild(script)
-  })
-
-  return mermaidLoaded
-}
 
 let renderCounter = 0
 
@@ -51,7 +32,7 @@ export const mermaidPlugin: WidgetPlugin = {
     const id = `mermaid-${spec.widgetId || ++renderCounter}`
     let disposed = false
 
-    loadMermaid()
+    loadCDN(MERMAID_CDN, "mermaid")
       .then(async () => {
         if (disposed) return // cleanup already ran — don't touch DOM
         const mermaid = (window as any).mermaid
@@ -91,6 +72,3 @@ export const mermaidPlugin: WidgetPlugin = {
     }
   },
 }
-
-// Backward compat: keep the old named export
-export const mermaidWidget = mermaidPlugin

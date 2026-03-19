@@ -6,6 +6,7 @@
 import { diffLines } from "diff"
 import hljs from "highlight.js/lib/core"
 import type { WidgetPlugin } from "../types"
+import { escapeHtml } from "../utils"
 
 interface DiffWidgetSpec {
   type: "diff"
@@ -58,9 +59,6 @@ function splitHighlightedLines(html: string): string[] {
   return result
 }
 
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-}
 
 export const diffPlugin: WidgetPlugin = {
   type: "diff",
@@ -159,6 +157,3 @@ export const diffPlugin: WidgetPlugin = {
     container.appendChild(wrapper)
   },
 }
-
-// Backward compat: keep the old named export
-export const diffWidget = diffPlugin

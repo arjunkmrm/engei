@@ -24,12 +24,10 @@ export { hydrateWidgets, buildWidgetRegistry, buildLangMap, getDefaultWidgets } 
 export type { WidgetSpec, WidgetHydrator } from "./widgets/registry"
 
 // Built-in widget plugins (pure objects — no side effects)
-export { chartPlugin, chartWidget } from "./widgets/ChartWidget"
-export { mermaidPlugin, mermaidWidget } from "./widgets/MermaidWidget"
-export { diffPlugin, diffWidget } from "./widgets/DiffWidget"
-
-// Legacy global registration (deprecated — use widgets prop instead)
-export { registerWidget } from "./widgets/registry"
+export { chartPlugin } from "./widgets/ChartWidget"
+export { mermaidPlugin } from "./widgets/MermaidWidget"
+export { diffPlugin } from "./widgets/DiffWidget"
+export { globePlugin } from "./widgets/GlobeWidget"
 
 // Styles — import "koen/styles" in your app
 import "./styles/koen.css"

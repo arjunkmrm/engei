@@ -817,34 +817,25 @@
 
 .md-preview table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   margin: 1.5em 0;
-  font-size: 0.92em;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--widget-border);
+  font-size: 0.88em;
 }
 
 .md-preview th, .md-preview td {
-  border-bottom: 1px solid var(--widget-border);
-  padding: 10px 14px;
+  padding: 8px 12px;
   text-align: left;
+  border-bottom: 1px solid color-mix(in srgb, var(--editor-fg) 10%, transparent);
 }
-
-.md-preview tr:last-child td { border-bottom: none; }
 
 .md-preview th {
-  background: color-mix(in srgb, var(--editor-fg) 6%, transparent);
   font-weight: 600;
-  font-size: 0.85em;
+  font-size: 0.8em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--editor-fg) 70%, transparent);
-}
-
-.md-preview tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--editor-fg) 2%, transparent);
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--editor-fg) 50%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--editor-fg) 15%, transparent);
+  padding-bottom: 6px;
 }
 
 .md-preview img {
@@ -881,10 +872,6 @@
 .koen-widget-placeholder {
   margin: 2em 0;
   min-height: 60px;
-  padding: 1em;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--editor-fg) 3%, transparent);
-  border: 1px solid color-mix(in srgb, var(--editor-fg) 6%, transparent);
 }
 
 .koen-widget-placeholder canvas {

@@ -16,21 +16,7 @@ import { resolveCollisions } from "../comments/resolveCollisions"
 import { applyHighlights } from "./usePreviewHighlights"
 import { hydrateWidgets, buildWidgetRegistry, buildLangMap, getDefaultWidgets } from "../widgets/registry"
 import type { Comment, Anchor, WidgetPlugin } from "../types"
-
-const COMMENT_COLORS = ["#C15F3C", "#7aa874", "#6a8ac0", "#c4a050", "#a070b0", "#c07070", "#50a0a0", "#b08050"]
-
-function getTimeAgo(isoStr: string): string {
-  if (!isoStr) return ""
-  const ts = isoStr.endsWith("Z") || isoStr.includes("+") ? isoStr : isoStr + "Z"
-  const diff = Date.now() - new Date(ts).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
+import { COMMENT_COLORS, getTimeAgo } from "../utils"
 
 interface Props {
   content: string
