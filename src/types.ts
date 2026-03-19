@@ -1,3 +1,16 @@
+import type { WidgetHydrator } from "./widgets/registry"
+
+export interface WidgetPlugin {
+  /** Widget type identifier used in the spec's `type` field */
+  type: string
+  /** If set, fenced code blocks with this language become widget placeholders */
+  codeBlockLang?: string
+  /** Convert code block text into a partial spec object. If omitted, text is parsed as JSON. */
+  toSpec?: (text: string, position?: number) => Record<string, any>
+  /** Function that hydrates the widget into a DOM element */
+  hydrate: WidgetHydrator
+}
+
 export interface Anchor {
   exact: string
   prefix: string
@@ -21,7 +34,7 @@ export interface Comment {
   replies: Reply[]
 }
 
-export interface SonoEditorProps {
+export interface EditorProps {
   /** File content (controlled) */
   content: string
   /** Filename for language detection (e.g. "main.rs") */
@@ -38,14 +51,16 @@ export interface SonoEditorProps {
   commentsVisible?: boolean
   /** Theme */
   theme?: "dark" | "light"
-  /** Display name for new comments */
-  author?: string
   /** Extra CSS class on root */
   className?: string
 
   /** Content changed */
   onChange?: (content: string) => void
-  /** New comment created — receives computed anchor */
+  /** New comment created from selection — receives computed anchor */
+  onCreateComment?: (anchor: Anchor) => void
+  /** Draft comment body submitted */
+  onUpdateComment?: (commentId: string, body: string) => void
+  /** @deprecated Use onCreateComment + onUpdateComment instead */
   onAddComment?: (anchor: Anchor, body: string) => void
   /** Comment resolved/deleted */
   onDeleteComment?: (commentId: string) => void
@@ -55,4 +70,7 @@ export interface SonoEditorProps {
   onActiveCommentChange?: (id: string | null) => void
   /** Internal link clicked (non-http, non-anchor) */
   onLinkClick?: (href: string) => void
+
+  /** Widget plugins for markdown preview. Defaults to built-in chart, mermaid, diff. */
+  widgets?: WidgetPlugin[]
 }

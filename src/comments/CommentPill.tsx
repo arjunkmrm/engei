@@ -58,6 +58,7 @@ export default function CommentPill({ view, onComment }: Props) {
   return (
     <button
       className="comment-pill"
+      aria-label="Add comment on selection"
       style={{ top: pos.top, left: pos.left }}
       onMouseDown={(e) => {
         e.preventDefault()

@@ -5,6 +5,7 @@
  */
 
 import { marked } from "marked"
+import DOMPurify from "dompurify"
 import hljs from "highlight.js/lib/core"
 import javascript from "highlight.js/lib/languages/javascript"
 import typescript from "highlight.js/lib/languages/typescript"
@@ -45,7 +46,10 @@ hljs.registerLanguage("md", markdown)
  * Parse markdown and return HTML with data-src-start/data-src-end attributes.
  * Strips YAML frontmatter and renders it as a quiet metadata block.
  */
-export function parseWithPositions(source: string): string {
+export function parseWithPositions(
+  source: string,
+  widgetLangs?: Map<string, import("../types").WidgetPlugin>,
+): string {
   let frontmatterHtml = ""
   let mdSource = source
 
@@ -73,7 +77,7 @@ export function parseWithPositions(source: string): string {
   const tokens = marked.lexer(processedSource)
   const offset = source.length - mdSource.length
   walkWithPosition(tokens, processedSource, 0, offset)
-  const renderer = buildPositionRenderer()
+  const renderer = buildPositionRenderer(widgetLangs)
   return frontmatterHtml + marked.parser(tokens, { renderer }) + footnotesHtml
 }
 
@@ -122,7 +126,7 @@ function processFootnotes(source: string): { processedSource: string; footnotesH
   let footnotesHtml = `<section class="citations-section"><h2>References</h2><ol class="citations-list">`
   for (const [key, num] of ordered) {
     const text = defs.get(key) || ""
-    footnotesHtml += `<li id="cite-${num}" value="${num}">${marked.parse(text)}</li>`
+    footnotesHtml += `<li id="cite-${num}" value="${num}">${DOMPurify.sanitize(marked.parse(text) as string)}</li>`
   }
   footnotesHtml += `</ol></section>`
 
@@ -224,7 +228,7 @@ function findTextStart(token: any, globalOffset = 0): number {
 
 // ─── Renderer with position attributes ───────────────────────────
 
-function buildPositionRenderer(): any {
+function buildPositionRenderer(widgetLangs?: Map<string, import("../types").WidgetPlugin>): any {
   const renderer = new marked.Renderer()
 
   function posAttrs(token: any): string {
@@ -261,29 +265,32 @@ function buildPositionRenderer(): any {
   }
 
   renderer.code = function (token: any) {
-    // Widget blocks: render as hydration placeholder instead of code
-    if (token.lang === "widget") {
+    // Generic widget blocks: raw JSON spec as placeholder
+    if (token.lang === "widget" || token.lang === "koen-widget") {
       const escapedSpec = escapeHtml(token.text.trim())
-      return `<div class="sono-widget-placeholder" data-widget-spec="${escapedSpec}"${posAttrs(token)}></div>\n`
+      return `<div class="koen-widget-placeholder" data-widget-spec="${escapedSpec}"${posAttrs(token)}></div>\n`
     }
 
-    // Diff code blocks: render as diff widget
-    if (token.lang === "diff") {
+    // Plugin-registered code block languages
+    const plugin = widgetLangs?.get(token.lang)
+    if (plugin) {
       try {
-        const parsed = JSON.parse(token.text)
-        const spec = JSON.stringify({ widgetId: `diff-${token.position?.start || 0}`, type: "diff", ...parsed })
+        let specData: Record<string, any>
+        if (plugin.toSpec) {
+          specData = plugin.toSpec(token.text, token.position?.start)
+        } else {
+          specData = JSON.parse(token.text)
+        }
+        const spec = JSON.stringify({
+          widgetId: `${plugin.type}-${token.position?.start || 0}`,
+          type: plugin.type,
+          ...specData,
+        })
         const escapedSpec = escapeHtml(spec)
-        return `<div class="sono-widget-placeholder" data-widget-spec="${escapedSpec}"${posAttrs(token)}></div>\n`
+        return `<div class="koen-widget-placeholder" data-widget-spec="${escapedSpec}"${posAttrs(token)}></div>\n`
       } catch {
-        // Fall through to render as regular code block if JSON is invalid
+        // Fall through to render as regular code block if parsing fails
       }
-    }
-
-    // Mermaid code blocks: render as mermaid widget
-    if (token.lang === "mermaid") {
-      const spec = JSON.stringify({ widgetId: `mermaid-${token.position?.start || 0}`, type: "mermaid", diagram: token.text })
-      const escapedSpec = escapeHtml(spec)
-      return `<div class="sono-widget-placeholder" data-widget-spec="${escapedSpec}"${posAttrs(token)}></div>\n`
     }
 
     let highlighted: string

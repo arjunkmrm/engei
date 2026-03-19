@@ -5,7 +5,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import Avatar from "boring-avatars"
-import { marked } from "marked"
+import { renderMarkdown } from "../sanitize"
 import { useWebHaptics } from "web-haptics/react"
 import type { Comment, Reply } from "../types"
 
@@ -122,7 +122,7 @@ export default function CommentCard({
       ) : (
         <>
           <div className="comment-card-body">
-            <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: marked.parse(comment.body) as string }} />
+            <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.body) }} />
           </div>
 
           {comment.replies?.map((reply: Reply) => (
@@ -136,7 +136,7 @@ export default function CommentCard({
                   <span className="comment-time">{getTimeAgo(reply.createdAt)}</span>
                 </div>
               </div>
-              <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: marked.parse(reply.body) as string }} />
+              <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(reply.body) }} />
             </div>
           ))}
 

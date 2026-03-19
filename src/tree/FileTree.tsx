@@ -80,7 +80,7 @@ function buildTree(files: TreeFile[]): TreeNode[] {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
-      className={`sono-tree-chevron ${open ? "open" : ""}`}
+      className={`koen-tree-chevron ${open ? "open" : ""}`}
       width="16" height="16" viewBox="0 0 16 16"
       fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
     >
@@ -122,17 +122,17 @@ function TreeItem({
   }
 
   return (
-    <div className="sono-tree-node">
+    <div className="koen-tree-node">
       <div
-        className={`sono-tree-row ${node.isDir ? "dir" : "file"} ${isActive ? "active" : ""}`}
+        className={`koen-tree-row ${node.isDir ? "dir" : "file"} ${isActive ? "active" : ""}`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
       >
         {node.isDir ? <ChevronIcon open={isOpen} /> : <FileIcon />}
-        <span className="sono-tree-label">{node.name}</span>
+        <span className="koen-tree-label">{node.name}</span>
       </div>
       {node.isDir && isOpen && (
-        <div className="sono-tree-children">
+        <div className="koen-tree-children">
           {node.children.map(child => (
             <TreeItem
               key={child.path}
@@ -166,21 +166,21 @@ export default function FileTree({ files, activePath, title, rootName, onFileSel
   ))
 
   return (
-    <div className="sono-file-tree">
-      {title && !rootName && <div className="sono-tree-title">{title}</div>}
-      <div className="sono-tree-list">
+    <div className="koen-file-tree">
+      {title && !rootName && <div className="koen-tree-title">{title}</div>}
+      <div className="koen-tree-list">
         {rootName ? (
-          <div className="sono-tree-node">
+          <div className="koen-tree-node">
             <div
-              className="sono-tree-row dir sono-tree-root"
+              className="koen-tree-row dir koen-tree-root"
               style={{ paddingLeft: "8px" }}
               onClick={() => toggle("__root__")}
             >
               <ChevronIcon open={rootOpen} />
-              <span className="sono-tree-label">{rootName}</span>
+              <span className="koen-tree-label">{rootName}</span>
             </div>
             {rootOpen && (
-              <div className="sono-tree-children">
+              <div className="koen-tree-children">
                 {treeItems}
               </div>
             )}

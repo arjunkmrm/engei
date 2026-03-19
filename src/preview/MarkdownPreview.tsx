@@ -1,21 +1,21 @@
 /**
  * Markdown preview with comment support.
- * Uses ref-based innerHTML (React doesn't own the preview div) + internal
- * Zustand store for highlight state, so highlights persist across re-renders.
+ * Uses ref-based innerHTML (React doesn't own the preview div).
+ * Highlight ranges are computed via useMemo from props, applied imperatively.
  */
 
 import { useEffect, useRef, useMemo, useState, useCallback, useLayoutEffect, forwardRef } from "react"
 import Avatar from "boring-avatars"
-import { marked } from "marked"
+import { renderMarkdown } from "../sanitize"
 import { useWebHaptics } from "web-haptics/react"
-import { parseWithPositions, domRangeToSourceRange, clearHighlights } from "./markedPositions"
-import { createAnchor as createAnchorFn } from "../comments/anchoring"
+import { parseWithPositions, clearHighlights } from "./markedPositions"
+import { useTextSelection } from "./useTextSelection"
+import { createAnchor as createAnchorFn, resolveAnchor } from "../comments/anchoring"
 import { computePopoverPositions } from "../comments/popoverPositioning"
 import { resolveCollisions } from "../comments/resolveCollisions"
-import { createPreviewHighlightStore, applyHighlights } from "./usePreviewHighlights"
-import { hydrateWidgets } from "../widgets/registry"
-import "../widgets/ChartWidget" // register chart widget
-import type { Comment, Anchor } from "../types"
+import { applyHighlights } from "./usePreviewHighlights"
+import { hydrateWidgets, buildWidgetRegistry, buildLangMap, getDefaultWidgets } from "../widgets/registry"
+import type { Comment, Anchor, WidgetPlugin } from "../types"
 
 const COMMENT_COLORS = ["#C15F3C", "#7aa874", "#6a8ac0", "#c4a050", "#a070b0", "#c07070", "#50a0a0", "#b08050"]
 
@@ -37,6 +37,7 @@ interface Props {
   comments: Comment[]
   commentsVisible: boolean
   theme?: "dark" | "light"
+  widgets?: WidgetPlugin[]
   onAddComment: (anchor: Anchor, body: string) => void
   onDeleteComment: (id: string) => void
   onAddReply: (commentId: string, body: string) => void
@@ -48,6 +49,7 @@ export default function MarkdownPreview({
   comments,
   commentsVisible,
   theme = "dark",
+  widgets,
   onAddComment,
   onDeleteComment,
   onAddReply,
@@ -57,16 +59,19 @@ export default function MarkdownPreview({
   const lastHtmlRef = useRef<string>("")
   const lastThemeRef = useRef<string>("")
   const haptic = useWebHaptics()
-  const [pillPos, setPillPos] = useState<{ top: number; left: number; from: number; to: number } | null>(null)
   const [commentPositions, setCommentPositions] = useState<{ commentId: string; top: number }[]>([])
   const [draftComment, setDraftComment] = useState<{ from: number; to: number; top: number } | null>(null)
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null)
-  const [popoverHoveredId, setPopoverHoveredId] = useState<string | null>(null)
+  // popoverHoveredId is managed imperatively via updatePopoverHover (no state needed)
   const [mobileSheetCommentId, setMobileSheetCommentId] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth <= 960)
+  const isMobileRef = useRef(typeof window !== "undefined" && window.innerWidth <= 960)
+  const [isMobile, setIsMobile] = useState(isMobileRef.current)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 960)
+    const check = () => {
+      isMobileRef.current = window.innerWidth <= 960
+      setIsMobile(isMobileRef.current)
+    }
     window.addEventListener("resize", check)
     return () => window.removeEventListener("resize", check)
   }, [])
@@ -76,18 +81,38 @@ export default function MarkdownPreview({
   // Skip popover entrance animation on file navigation (content change)
   const prevContentRef = useRef(content)
   const [skipPopoverAnim, setSkipPopoverAnim] = useState(false)
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (prevContentRef.current !== content) {
       prevContentRef.current = content
       setSkipPopoverAnim(true)
       requestAnimationFrame(() => setSkipPopoverAnim(false))
     }
   }, [content])
-  const html = useMemo(() => parseWithPositions(content || ""), [content])
 
-  // Internal highlight store — persists across re-renders, drives DOM mutations
-  const storeRef = useRef(createPreviewHighlightStore())
-  const store = storeRef.current
+  // ─── Widget system ─────────────────────────────────────────
+  const resolvedWidgets = useMemo(() => widgets ?? getDefaultWidgets(), [widgets])
+  const widgetLangMap = useMemo(() => buildLangMap(resolvedWidgets), [resolvedWidgets])
+  const widgetRegistry = useMemo(() => buildWidgetRegistry(resolvedWidgets), [resolvedWidgets])
+
+  const html = useMemo(() => parseWithPositions(content || "", widgetLangMap), [content, widgetLangMap])
+
+  // Text selection tracking for comment pill
+  const [pillPos, setPillPos] = useTextSelection(contentRef, html)
+
+  // Compute highlight ranges directly from props (no store sync needed)
+  const highlightRanges = useMemo(() => {
+    const ranges: { id: string; from: number; to: number }[] = []
+    for (const comment of comments) {
+      const resolved = resolveAnchor(content, comment.anchor)
+      if (resolved) ranges.push({ id: comment.id, from: resolved.from, to: resolved.to })
+    }
+    return ranges
+  }, [comments, content])
+
+  const draftRange = useMemo(
+    () => draftComment ? { from: draftComment.from, to: draftComment.to } : null,
+    [draftComment]
+  )
 
   // ─── Manual innerHTML management ─────────────────────────────
   // React never touches the preview div's innerHTML. We own it via ref.
@@ -116,30 +141,19 @@ export default function MarkdownPreview({
     }
 
     // Hydrate widget placeholders (runs on html OR theme change)
-    widgetCleanupsRef.current = hydrateWidgets(el, theme)
-  }, [html, theme])
+    widgetCleanupsRef.current = hydrateWidgets(el, theme, widgetRegistry)
+  }, [html, theme, widgetRegistry])
 
-  // ─── Sync props → store ──────────────────────────────────────
+  // ─── Apply highlights (runs before paint to avoid flash) ───
 
-  useEffect(() => {
-    store.getState().setFromComments(comments, content)
-  }, [comments, content, store])
-
-  useEffect(() => {
-    store.getState().setDraft(draftComment ? { from: draftComment.from, to: draftComment.to } : null)
-  }, [draftComment, store])
-
-  // ─── Apply highlights from store (runs after every relevant change) ───
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = contentRef.current
     if (!el || !commentsVisible) {
       if (el) clearHighlights(el)
       return
     }
 
-    const { ranges, draftRange } = store.getState()
-    applyHighlights(el, ranges, draftRange)
+    applyHighlights(el, highlightRanges, draftRange)
 
     // Compute positions for comment popovers from highlight spans
     // Use .md-preview-inner as reference — it shares the same top edge as .md-preview-margin
@@ -149,7 +163,7 @@ export default function MarkdownPreview({
       .filter(Boolean) as HTMLElement[]
     const computed = computePopoverPositions(mdPreview as HTMLElement, spans)
     setCommentPositions(computed.map(p => ({ commentId: p.id, top: p.top })))
-  }, [html, comments, content, draftComment, commentsVisible, store])
+  }, [html, comments, highlightRanges, draftRange, commentsVisible])
 
   // Recompute positions on resize (content reflows change highlight positions)
   useEffect(() => {
@@ -172,30 +186,21 @@ export default function MarkdownPreview({
     return () => { ro.disconnect(); window.removeEventListener("resize", recompute) }
   }, [comments, commentsVisible])
 
-  // Reverse highlight: when hovering a popover, glow its highlight
-  useEffect(() => {
+  // Reverse highlight: when hovering a popover, glow its highlight (imperative in handler)
+  const updatePopoverHover = useCallback((id: string | null) => {
     const el = contentRef.current
     if (!el) return
     el.querySelectorAll("[data-comment-highlight].popover-hovered").forEach(
       h => h.classList.remove("popover-hovered")
     )
-    if (popoverHoveredId) {
-      el.querySelectorAll(`[data-comment-id="${popoverHoveredId}"]`).forEach(
+    if (id) {
+      el.querySelectorAll(`[data-comment-id="${id}"]`).forEach(
         h => h.classList.add("popover-hovered")
       )
     }
-  }, [popoverHoveredId])
+  }, [])
 
-  // Also subscribe to store changes to re-apply if store updates outside React
-  useEffect(() => {
-    const el = contentRef.current
-    if (!el) return
-    return store.subscribe(() => {
-      if (!commentsVisible) return
-      const { ranges, draftRange } = store.getState()
-      applyHighlights(el, ranges, draftRange)
-    })
-  }, [store, commentsVisible])
+  // No store subscription needed — highlights are driven by useMemo ranges above
 
   // ─── Click handling ──────────────────────────────────────────
 
@@ -224,7 +229,7 @@ export default function MarkdownPreview({
         const id = hl.getAttribute("data-comment-id")
         if (id) {
           // Mobile: open bottom sheet instead of toggling margin popover
-          if (isMobile) {
+          if (isMobileRef.current) {
             setMobileSheetCommentId(prev => prev === id ? null : id)
             return
           }
@@ -265,7 +270,7 @@ export default function MarkdownPreview({
       const raw = link.getAttribute("data-citation") || ""
       const tip = document.createElement("div")
       tip.className = "citation-tooltip"
-      tip.innerHTML = marked.parse(raw) as string
+      tip.innerHTML = renderMarkdown(raw)
 
       const mdPreview = el.closest(".md-preview") as HTMLElement
       mdPreview.appendChild(tip)
@@ -302,59 +307,6 @@ export default function MarkdownPreview({
     }
   }, [html])
 
-  // ─── Text selection for comments ─────────────────────────────
-
-  useEffect(() => {
-    const el = contentRef.current
-    if (!el) return
-
-    const handleSelection = () => {
-      const sel = window.getSelection()
-      if (!sel || sel.isCollapsed || !sel.rangeCount) { setPillPos(null); return }
-
-      const range = sel.getRangeAt(0)
-      if (!el.contains(range.startContainer) || !el.contains(range.endContainer)) { setPillPos(null); return }
-
-      const srcRange = domRangeToSourceRange(range)
-      if (!srcRange) { setPillPos(null); return }
-
-      const rects = range.getClientRects()
-      if (rects.length === 0) { setPillPos(null); return }
-
-      const firstRect = rects[0]
-      const containerRect = (el.closest(".md-preview-inner") as HTMLElement)?.getBoundingClientRect() || el.getBoundingClientRect()
-
-      const centerX = (firstRect.left + firstRect.right) / 2
-      const left = Math.max(40, Math.min(centerX - containerRect.left, containerRect.width - 40))
-      setPillPos({
-        top: firstRect.top - containerRect.top - 36,
-        left,
-        from: srcRange.start,
-        to: srcRange.end,
-      })
-    }
-
-    const handleMouseDown = () => setPillPos(null)
-    const handleMouseUp = () => requestAnimationFrame(handleSelection)
-
-    // Touch: use selectionchange since mouseup doesn't fire
-    let selectionTimer: ReturnType<typeof setTimeout> | null = null
-    const handleSelectionChange = () => {
-      if (selectionTimer) clearTimeout(selectionTimer)
-      selectionTimer = setTimeout(handleSelection, 200)
-    }
-
-    el.addEventListener("mousedown", handleMouseDown)
-    document.addEventListener("mouseup", handleMouseUp)
-    document.addEventListener("selectionchange", handleSelectionChange)
-    return () => {
-      el.removeEventListener("mousedown", handleMouseDown)
-      document.removeEventListener("mouseup", handleMouseUp)
-      document.removeEventListener("selectionchange", handleSelectionChange)
-      if (selectionTimer) clearTimeout(selectionTimer)
-    }
-  }, [html])
-
   // ─── Cmd+Shift+M to comment on selection ─────────────────────
 
   useEffect(() => {
@@ -375,6 +327,16 @@ export default function MarkdownPreview({
 
   const popoverRefs = useRef<Record<string, HTMLElement>>({})
   const [resolvedPositions, setResolvedPositions] = useState<any[]>([])
+
+  // Clean up stale popoverRefs when comments are removed
+  const commentIds = useMemo(() => new Set(comments.map(c => c.id)), [comments])
+  useMemo(() => {
+    for (const id of Object.keys(popoverRefs.current)) {
+      if (id !== "draft" && !commentIds.has(id)) {
+        delete popoverRefs.current[id]
+      }
+    }
+  }, [commentIds])
 
   const visibleComments = useMemo(() => {
     return commentPositions.map(pos => {
@@ -411,23 +373,26 @@ export default function MarkdownPreview({
   }, [doResolve])
 
   // Track submitted draft so it renders as a committed comment card in-place
-  const [submittedDraft, setSubmittedDraft] = useState<{ body: string; top: number } | null>(null)
-  const commentsCountAtSubmit = useRef<number | null>(null)
+  const [submittedDraft, setSubmittedDraft] = useState<{ body: string; top: number; anchor: Anchor } | null>(null)
 
-  // Clear submitted draft once comments count increases (real comment arrived)
+  // Clear submitted draft once the matching comment appears in props
   useEffect(() => {
-    if (commentsCountAtSubmit.current !== null && comments.length > commentsCountAtSubmit.current) {
-      commentsCountAtSubmit.current = null
+    if (!submittedDraft) return
+    const arrived = comments.some(c =>
+      c.anchor.exact === submittedDraft.anchor.exact &&
+      c.anchor.hint === submittedDraft.anchor.hint &&
+      c.body === submittedDraft.body
+    )
+    if (arrived) {
       setSubmittedDraft(null)
       setDraftComment(null)
     }
-  }, [comments.length])
+  }, [comments, submittedDraft])
 
   const handleDraftSubmit = (body: string) => {
     if (!draftComment) return
     const anchor = createAnchorFn(content, draftComment.from, draftComment.to)
-    commentsCountAtSubmit.current = comments.length
-    setSubmittedDraft({ body, top: draftComment.top })
+    setSubmittedDraft({ body, top: draftComment.top, anchor })
     onAddComment(anchor, body)
   }
 
@@ -442,6 +407,7 @@ export default function MarkdownPreview({
         {commentsVisible && pillPos && !draftComment && (
           <button
             className="comment-pill"
+            aria-label="Add comment on selection"
             style={{ top: pillPos.top, left: pillPos.left }}
             onMouseDown={(e) => {
               e.preventDefault()
@@ -483,7 +449,7 @@ export default function MarkdownPreview({
                   </div>
                 </div>
                 <div className="comment-card-body">
-                  <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: marked.parse(submittedDraft.body) as string }} />
+                  <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(submittedDraft.body) }} />
                 </div>
                 <div className="comment-reply-box">
                   <textarea className="comment-reply-input" placeholder="Reply..." rows={1} readOnly />
@@ -510,7 +476,7 @@ export default function MarkdownPreview({
               skipAnimation={skipPopoverAnim}
               onDelete={onDeleteComment}
               onAddReply={onAddReply}
-              onHover={setPopoverHoveredId}
+              onHover={updatePopoverHover}
             />
           )
         ))}
@@ -520,8 +486,8 @@ export default function MarkdownPreview({
         if (!comment) return null
         return (
           <>
-            <div className="comment-bottom-sheet-backdrop" onClick={() => setMobileSheetCommentId(null)} />
-            <div className="comment-bottom-sheet">
+            <div className="comment-bottom-sheet-backdrop" aria-hidden="true" onClick={() => setMobileSheetCommentId(null)} />
+            <div className="comment-bottom-sheet" role="dialog" aria-label="Comment thread">
               <div className="comment-bottom-sheet-handle" />
               <div className="comment-thread-scroll">
                 <div className="comment-thread-item">
@@ -535,7 +501,7 @@ export default function MarkdownPreview({
                     </div>
                   </div>
                   <div className="comment-thread-content">
-                    {comment.body && <TruncatedBody html={marked.parse(comment.body) as string} />}
+                    {comment.body && <TruncatedBody html={renderMarkdown(comment.body)} />}
                   </div>
                 </div>
                 {comment.replies?.map(reply => (
@@ -550,7 +516,7 @@ export default function MarkdownPreview({
                       </div>
                     </div>
                     <div className="comment-thread-content">
-                      <TruncatedBody html={marked.parse(reply.body) as string} />
+                      <TruncatedBody html={renderMarkdown(reply.body)} />
                     </div>
                   </div>
                 ))}
@@ -709,8 +675,8 @@ const PreviewCommentPopover = forwardRef<HTMLDivElement, PreviewPopoverProps>(({
           </div>
           <div className="comment-thread-content">
             {comment.body && (expanded
-              ? <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: marked.parse(comment.body) as string }} />
-              : <TruncatedBody html={marked.parse(comment.body) as string} />
+              ? <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.body) }} />
+              : <TruncatedBody html={renderMarkdown(comment.body)} />
             )}
           </div>
         </div>
@@ -727,8 +693,8 @@ const PreviewCommentPopover = forwardRef<HTMLDivElement, PreviewPopoverProps>(({
             </div>
             <div className="comment-thread-content">
               {expanded
-                ? <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: marked.parse(reply.body) as string }} />
-                : <TruncatedBody html={marked.parse(reply.body) as string} />
+                ? <div className="comment-text comment-md" dangerouslySetInnerHTML={{ __html: renderMarkdown(reply.body) }} />
+                : <TruncatedBody html={renderMarkdown(reply.body)} />
               }
             </div>
           </div>

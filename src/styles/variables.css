@@ -1,7 +1,7 @@
-/* Default CSS variables for sono-editor (dark theme) */
+/* Default CSS variables for koen-editor (dark theme) */
 /* Override these on a parent element or :root to customize */
 
-.sono-editor, :root {
+.koen-editor, :root {
   --editor-bg: #1a1816;
   --editor-fg: #e8e6e3;
   --editor-cursor: #e8e6e3;
@@ -22,7 +22,7 @@
   --tab-fg-inactive: #888;
 }
 
-.sono-editor[data-theme="light"] {
+.koen-editor[data-theme="light"] {
   --editor-bg: #faf8f5;
   --editor-fg: #2a2520;
   --editor-cursor: #2a2520;

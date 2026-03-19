@@ -1,7 +1,13 @@
 /**
  * Widget registry — maps widget types to hydration functions.
- * Consumers can register custom widget types.
+ * Supports per-instance registries via buildWidgetRegistry(),
+ * with a legacy global registry for backward compatibility.
  */
+
+import type { WidgetPlugin } from "../types"
+import { chartPlugin } from "./ChartWidget"
+import { mermaidPlugin } from "./MermaidWidget"
+import { diffPlugin } from "./DiffWidget"
 
 export type WidgetHydrator = (
   container: HTMLElement,
@@ -15,27 +21,59 @@ export interface WidgetSpec {
   [key: string]: any
 }
 
-const registry = new Map<string, WidgetHydrator>()
+// ─── Legacy global registry (backward compat) ───────────────
 
-export function registerWidget(type: string, hydrator: WidgetHydrator) {
-  registry.set(type, hydrator)
+const legacyRegistry = new Map<string, WidgetHydrator>()
+
+/** @deprecated Use the `widgets` prop on Editor instead. */
+export function registerWidget(type: string, hydrator: WidgetHydrator): WidgetHydrator {
+  legacyRegistry.set(type, hydrator)
+  return hydrator
 }
 
-export function getWidgetHydrator(type: string): WidgetHydrator | undefined {
-  return registry.get(type)
+// ─── Per-instance registry helpers ──────────────────────────
+
+/** Build a Map<type, hydrator> from an array of WidgetPlugins. */
+export function buildWidgetRegistry(plugins: WidgetPlugin[]): Map<string, WidgetHydrator> {
+  return new Map(plugins.map(p => [p.type, p.hydrate]))
 }
 
+/** Build a Map<codeBlockLang, plugin> for parseWithPositions. */
+export function buildLangMap(plugins: WidgetPlugin[]): Map<string, WidgetPlugin> {
+  const map = new Map<string, WidgetPlugin>()
+  for (const p of plugins) {
+    if (p.codeBlockLang) map.set(p.codeBlockLang, p)
+  }
+  return map
+}
+
+// ─── Default built-in widgets ───────────────────────────────
+
+const _defaults: WidgetPlugin[] = [chartPlugin, mermaidPlugin, diffPlugin]
+
+export function getDefaultWidgets(): WidgetPlugin[] {
+  return _defaults
+}
+
+// ─── Hydration ──────────────────────────────────────────────
+
+/**
+ * Find all widget placeholders in a container and hydrate them.
+ * Accepts an explicit registry; falls back to the legacy global registry.
+ */
 export function hydrateWidgets(
   container: HTMLElement,
   theme: "dark" | "light",
+  registry?: Map<string, WidgetHydrator>,
 ): (() => void)[] {
+  const reg = registry ?? legacyRegistry
   const cleanups: (() => void)[] = []
   const placeholders = container.querySelectorAll<HTMLElement>("[data-widget-spec]")
 
   for (const el of placeholders) {
     try {
       const spec: WidgetSpec = JSON.parse(el.getAttribute("data-widget-spec")!)
-      const hydrator = registry.get(spec.type)
+      const hydrator = reg.get(spec.type)
       if (hydrator) {
         const cleanup = hydrator(el, spec, theme)
         if (cleanup) cleanups.push(cleanup)

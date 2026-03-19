@@ -1,18 +1,27 @@
 /**
- * SonoEditor — standalone code editor with inline comments.
+ * Editor — standalone code editor with inline comments.
  * Pure UI component: props in, callbacks out.
  */
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from "react"
 import type { EditorView } from "@codemirror/view"
 import CodeMirrorEditor from "./editor/CodeMirrorEditor"
 import CommentPill from "./comments/CommentPill"
 import CommentMargin from "./comments/CommentMargin"
 import MarkdownPreview from "./preview/MarkdownPreview"
 import { createAnchor } from "./comments/anchoring"
-import type { SonoEditorProps } from "./types"
+import type { EditorProps } from "./types"
 
-export default function SonoEditor({
+export interface EditorHandle {
+  /** Get the current document content */
+  getContent: () => string
+  /** Focus the editor */
+  focus: () => void
+  /** Get the underlying CodeMirror EditorView (source mode only) */
+  getView: () => EditorView | null
+}
+
+export default forwardRef<EditorHandle, EditorProps>(function Editor({
   content,
   filename = "",
   readOnly = false,
@@ -21,37 +30,58 @@ export default function SonoEditor({
   activeCommentId = null,
   commentsVisible = true,
   theme = "dark",
-  author = "You",
   className = "",
   onChange,
-  onAddComment,
+  onCreateComment,
+  onUpdateComment,
+  onAddComment, // deprecated compat
   onDeleteComment,
   onAddReply,
   onActiveCommentChange,
   onLinkClick,
-}: SonoEditorProps) {
+  widgets,
+}, ref) {
   const [view, setView] = useState<EditorView | null>(null)
   const isDark = theme === "dark"
+  const contentRef = useRef(content)
+  contentRef.current = content
+
+  // Imperative handle
+  useImperativeHandle(ref, () => ({
+    getContent: () => contentRef.current,
+    focus: () => view?.focus(),
+    getView: () => view,
+  }), [view])
 
   // When user clicks the comment pill in source mode
   const handleSourceComment = useCallback((from: number, to: number) => {
-    if (!onAddComment) return
     const doc = view?.state.doc.toString() || content
     const anchor = createAnchor(doc, from, to)
-    // Create a draft comment (empty body) — the CommentCard will show the input
-    onAddComment(anchor, "")
-  }, [view, content, onAddComment])
+    if (onCreateComment) {
+      onCreateComment(anchor)
+    } else if (onAddComment) {
+      onAddComment(anchor, "")
+    }
+  }, [view, content, onCreateComment, onAddComment])
 
   // When CommentCard submits a body for a draft comment
   const handleSubmitBody = useCallback((commentId: string, body: string) => {
-    // The consumer should update the comment's body in their state
-    // We expose this as onAddComment with the existing anchor
-    const comment = comments.find(c => c.id === commentId)
-    if (comment && onAddComment) {
-      // Re-emit with body filled in — consumer can update their state
-      onAddComment(comment.anchor, body)
+    if (onUpdateComment) {
+      onUpdateComment(commentId, body)
+    } else if (onAddComment) {
+      const comment = comments.find(c => c.id === commentId)
+      if (comment) onAddComment(comment.anchor, body)
     }
-  }, [comments, onAddComment])
+  }, [comments, onUpdateComment, onAddComment])
+
+  // Compat wrapper: MarkdownPreview still uses onAddComment internally
+  const handlePreviewAddComment = useCallback((anchor: any, body: string) => {
+    if (body === "" && onCreateComment) {
+      onCreateComment(anchor)
+    } else if (onAddComment) {
+      onAddComment(anchor, body)
+    }
+  }, [onCreateComment, onAddComment])
 
   const handleActiveChange = useCallback((id: string | null) => {
     onActiveCommentChange?.(id)
@@ -59,14 +89,15 @@ export default function SonoEditor({
 
   if (mode === "preview") {
     return (
-      <div className={`sono-editor ${className}`.trim()} data-theme={theme}>
+      <div className={`koen-editor ${className}`.trim()} data-theme={theme}>
         <div className="editor-container preview-scroll">
           <MarkdownPreview
             content={content}
             comments={comments}
             commentsVisible={commentsVisible}
             theme={theme}
-            onAddComment={(anchor, body) => onAddComment?.(anchor, body)}
+            widgets={widgets}
+            onAddComment={handlePreviewAddComment}
             onDeleteComment={(id) => onDeleteComment?.(id)}
             onAddReply={(commentId, body) => onAddReply?.(commentId, body)}
             onLinkClick={onLinkClick}
@@ -77,7 +108,7 @@ export default function SonoEditor({
   }
 
   return (
-    <div className={`sono-editor ${className}`.trim()} data-theme={theme}>
+    <div className={`koen-editor ${className}`.trim()} data-theme={theme}>
       <div className="editor-main">
         <div className="editor-container" style={{ position: "relative" }}>
           <CodeMirrorEditor
@@ -109,4 +140,4 @@ export default function SonoEditor({
       </div>
     </div>
   )
-}
+})

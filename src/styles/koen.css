@@ -3,52 +3,52 @@
 
 /* ─── Scrollbar ──────────────────────────────────────────── */
 
-.sono-editor,
-.sono-editor * {
+.koen-editor,
+.koen-editor * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-.sono-editor ::-webkit-scrollbar {
+.koen-editor ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.sono-editor ::-webkit-scrollbar-track {
+.koen-editor ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sono-editor ::-webkit-scrollbar-thumb {
+.koen-editor ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
 
-.sono-editor ::-webkit-scrollbar-thumb:hover {
+.koen-editor ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 
-.sono-editor[data-theme="light"],
-.sono-editor[data-theme="light"] * {
+.koen-editor[data-theme="light"],
+.koen-editor[data-theme="light"] * {
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
 }
 
-.sono-editor[data-theme="light"] ::-webkit-scrollbar-thumb {
+.koen-editor[data-theme="light"] ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
 }
 
-.sono-editor[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+.koen-editor[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
 }
 
 /* ─── Selection ──────────────────────────────────────────── */
 
-.sono-editor ::selection {
+.koen-editor ::selection {
   background: var(--editor-selection);
 }
 
 /* ─── Layout ─────────────────────────────────────────────── */
 
-.sono-editor {
+.koen-editor {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -56,24 +56,24 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.sono-editor .editor-main {
+.koen-editor .editor-main {
   display: flex;
   flex: 1;
   min-height: 0;
   position: relative;
 }
 
-.sono-editor .editor-container {
+.koen-editor .editor-container {
   flex: 1;
   min-width: 0;
   overflow: auto;
 }
 
-.sono-editor .sono-editor-cm {
+.koen-editor .koen-editor-cm {
   height: 100%;
 }
 
-.sono-editor .sono-editor-cm .cm-editor {
+.koen-editor .koen-editor-cm .cm-editor {
   height: 100%;
 }
 
@@ -784,30 +784,30 @@
 .md-preview pre code .hljs-params { color: #e8e6e3; }
 
 /* hljs light mode overrides — warm earthy palette */
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-comment { color: #9a9080; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-string { color: #607040; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-number { color: #a0652a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-literal { color: #a0652a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-keyword { color: #b04a30; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-built_in { color: #8a6030; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-function { color: #8a6030; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-title { color: #8a6030; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-type { color: #7a5a3a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-class { color: #7a5a3a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-variable { color: #2a2520; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-attr { color: #6a5a48; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-property { color: #6a5a48; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-tag { color: #b04a30; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-name { color: #b04a30; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-attribute { color: #a0652a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-punctuation { color: #5a5048; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-meta { color: #9a9080; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-selector-class,
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-selector-id,
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-selector-tag { color: #b04a30; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-regexp { color: #607040; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-symbol { color: #a0652a; }
-.sono-editor[data-theme="light"] .md-preview pre code .hljs-params { color: #2a2520; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-comment { color: #9a9080; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-string { color: #607040; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-number { color: #a0652a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-literal { color: #a0652a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-keyword { color: #b04a30; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-built_in { color: #8a6030; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-function { color: #8a6030; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-title { color: #8a6030; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-type { color: #7a5a3a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-class { color: #7a5a3a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-variable { color: #2a2520; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-attr { color: #6a5a48; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-property { color: #6a5a48; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-tag { color: #b04a30; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-name { color: #b04a30; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-attribute { color: #a0652a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-punctuation { color: #5a5048; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-meta { color: #9a9080; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-selector-class,
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-selector-id,
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-selector-tag { color: #b04a30; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-regexp { color: #607040; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-symbol { color: #a0652a; }
+.koen-editor[data-theme="light"] .md-preview pre code .hljs-params { color: #2a2520; }
 
 .md-preview hr {
   border: none;
@@ -864,25 +864,25 @@
 
 /* ─── Widgets ────────────────────────────────────────────── */
 
-.sono-widget-placeholder {
+.koen-widget-placeholder {
   margin: 1.5em 0;
   min-height: 60px;
 }
 
-.sono-widget-placeholder canvas {
+.koen-widget-placeholder canvas {
   max-width: 100%;
 }
 
 /* ─── Diff widget ────────────────────────────────────────── */
 
-.sono-diff-widget {
+.koen-diff-widget {
   overflow: hidden;
   font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 13px;
   line-height: 1.55;
 }
 
-.sono-diff-header {
+.koen-diff-header {
   padding: 0 0 4px;
   font-size: 13px;
   font-weight: 600;
@@ -890,32 +890,32 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.sono-diff-summary {
+.koen-diff-summary {
   padding: 0 0 6px;
   font-size: 12px;
   color: var(--icon-fg, #6A6A70);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.sono-diff-table {
+.koen-diff-table {
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
   border: none;
 }
 
-.sono-diff-table tr {
+.koen-diff-table tr {
   border: none;
 }
 
-.sono-diff-row td {
+.koen-diff-row td {
   padding: 0;
   vertical-align: top;
   white-space: pre;
   border: none !important;
 }
 
-.sono-diff-num {
+.koen-diff-num {
   width: 1px;
   min-width: 36px;
   padding: 0 8px !important;
@@ -925,73 +925,73 @@
   user-select: none;
 }
 
-.sono-diff-prefix {
+.koen-diff-prefix {
   width: 1px;
   padding: 0 6px 0 2px !important;
   user-select: none;
   font-weight: 700;
 }
 
-.sono-diff-code {
+.koen-diff-code {
   width: 100%;
   padding: 0 14px 0 4px !important;
 }
 
 /* Row colors — bold, solid bands */
-.sono-diff-row.sono-diff-equal {
+.koen-diff-row.koen-diff-equal {
   background: var(--sidebar-bg, #1a1816);
 }
 
-.sono-diff-row.sono-diff-add {
+.koen-diff-row.koen-diff-add {
   background: rgba(40, 120, 40, 0.35);
 }
 
-.sono-diff-row.sono-diff-add .sono-diff-prefix {
+.koen-diff-row.koen-diff-add .koen-diff-prefix {
   color: #6ddc6d;
 }
 
-.sono-diff-row.sono-diff-add .sono-diff-num {
+.koen-diff-row.koen-diff-add .koen-diff-num {
   color: rgba(109, 220, 109, 0.6);
 }
 
-.sono-diff-row.sono-diff-remove {
+.koen-diff-row.koen-diff-remove {
   background: rgba(180, 40, 30, 0.40);
 }
 
-.sono-diff-row.sono-diff-remove .sono-diff-prefix {
+.koen-diff-row.koen-diff-remove .koen-diff-prefix {
   color: #f06060;
 }
 
-.sono-diff-row.sono-diff-remove .sono-diff-num {
+.koen-diff-row.koen-diff-remove .koen-diff-num {
   color: rgba(240, 96, 96, 0.6);
 }
 
 /* Light mode overrides */
-.sono-editor[data-theme="light"] .sono-diff-num {
+.koen-editor[data-theme="light"] .koen-diff-num {
   color: rgba(42, 37, 32, 0.35);
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-add {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-add {
   background: rgba(40, 140, 40, 0.18);
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-add .sono-diff-prefix {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-add .koen-diff-prefix {
   color: #2d8a2d;
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-add .sono-diff-num {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-add .koen-diff-num {
   color: rgba(45, 138, 45, 0.6);
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-remove {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-remove {
   background: rgba(200, 40, 30, 0.18);
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-remove .sono-diff-prefix {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-remove .koen-diff-prefix {
   color: #c03020;
 }
 
-.sono-editor[data-theme="light"] .sono-diff-row.sono-diff-remove .sono-diff-num {
+.koen-editor[data-theme="light"] .koen-diff-row.koen-diff-remove .koen-diff-num {
   color: rgba(192, 48, 32, 0.6);
 }
 

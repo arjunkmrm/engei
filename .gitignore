@@ -1,6 +1,8 @@
 node_modules
 dist
 *.log
+.debug/
+.todos.txt
 
 # wrangler files
 .wrangler

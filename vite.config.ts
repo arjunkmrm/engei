@@ -16,7 +16,7 @@ export default defineConfig({
     lib: {
       entry: "src/index.ts",
       formats: ["es"],
-      fileName: "sono-editor",
+      fileName: "koen",
     },
     rollupOptions: {
       external: ["react", "react-dom", "react/jsx-runtime"],

@@ -1,11 +1,12 @@
 /**
  * Controlled CodeMirror 6 editor component.
  * Accepts content as a prop, emits onChange.
+ * Uses Compartments for readOnly/theme to avoid full editor rebuilds.
  */
 
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, basicSetup } from "codemirror"
-import { EditorState } from "@codemirror/state"
+import { EditorState, Compartment } from "@codemirror/state"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage } from "./languages"
 import { commentField, setComments } from "../comments/CommentDecoration"
@@ -39,7 +40,12 @@ export default function CodeMirrorEditor({
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
-  // Create/destroy editor when filename or theme changes
+  // Compartments for reconfigurable extensions
+  const readOnlyComp = useRef(new Compartment())
+  const themeComp = useRef(new Compartment())
+  const syntaxComp = useRef(new Compartment())
+
+  // Create/destroy editor when filename changes (language requires rebuild)
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -47,22 +53,19 @@ export default function CodeMirrorEditor({
 
     const extensions = [
       basicSetup,
-      buildSonoTheme(isDark),
-      getSyntaxHighlighting(isDark),
+      themeComp.current.of(buildSonoTheme(isDark)),
+      syntaxComp.current.of(getSyntaxHighlighting(isDark)),
       EditorView.lineWrapping,
       EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
       ...getLanguage(filename),
       commentField,
+      readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
       EditorView.updateListener.of(update => {
         if (update.docChanged && !suppressChangeRef.current) {
           onChangeRef.current?.(update.state.doc.toString())
         }
       }),
     ]
-
-    if (readOnly) {
-      extensions.push(EditorState.readOnly.of(true))
-    }
 
     const state = EditorState.create({ doc: content, extensions })
     const view = new EditorView({ state, parent: containerRef.current })
@@ -74,9 +77,28 @@ export default function CodeMirrorEditor({
       viewRef.current = null
       onViewDestroy?.()
     }
-    // Intentionally only rebuild on filename/theme/readOnly change
+    // Only rebuild on filename change (language requires new parser)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filename, isDark, readOnly])
+  }, [filename])
+
+  // Reconfigure readOnly via compartment (no rebuild)
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    view.dispatch({ effects: readOnlyComp.current.reconfigure(EditorState.readOnly.of(readOnly)) })
+  }, [readOnly])
+
+  // Reconfigure theme via compartment (no rebuild)
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    view.dispatch({
+      effects: [
+        themeComp.current.reconfigure(buildSonoTheme(isDark)),
+        syntaxComp.current.reconfigure(getSyntaxHighlighting(isDark)),
+      ],
+    })
+  }, [isDark])
 
   // Sync controlled content prop -> CM6 doc
   useEffect(() => {
@@ -111,5 +133,5 @@ export default function CodeMirrorEditor({
     syncComments()
   }, [syncComments])
 
-  return <div ref={containerRef} className="sono-editor-cm" />
+  return <div ref={containerRef} className="koen-editor-cm" />
 }
