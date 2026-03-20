@@ -386,9 +386,22 @@ export default function MarkdownPreview({
 
   useEffect(() => {
     doResolve()
-    const raf = requestAnimationFrame(() => doResolve())
+    // Double-RAF: first RAF fires after React commits DOM, second fires after
+    // browser layout/paint — so offsetHeight is accurate for newly-appearing popovers
+    const raf = requestAnimationFrame(() => {
+      requestAnimationFrame(() => doResolve())
+    })
     return () => cancelAnimationFrame(raf)
   }, [doResolve])
+
+  // Re-resolve when any popover changes size (e.g. reply added, expand/collapse)
+  useEffect(() => {
+    const ro = new ResizeObserver(() => doResolve())
+    for (const el of Object.values(popoverRefs.current)) {
+      if (el) ro.observe(el)
+    }
+    return () => ro.disconnect()
+  }, [doResolve, resolvedPositions])
 
   // Track submitted draft so it renders as a committed comment card in-place
   const [submittedDraft, setSubmittedDraft] = useState<{ body: string; top: number; anchor: Anchor } | null>(null)
