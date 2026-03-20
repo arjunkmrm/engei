@@ -77,6 +77,10 @@
   height: 100%;
 }
 
+.koen-editor-cm[data-readonly] .cm-cursor {
+  display: none !important;
+}
+
 /* ─── Comment highlight (code mode) ──────────────────────── */
 
 .cm-comment-highlight {
@@ -338,18 +342,35 @@
   border: 1px solid var(--widget-border, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease,
+              transform 0.12s cubic-bezier(0.16, 1, 0.3, 1) 0.18s;
   pointer-events: auto;
-  animation: pill-appear 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: pill-appear 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes pill-appear {
-  from { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(4px); }
-  to { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+  0% { opacity: 0; transform: translateX(-50%) scale(0.96) translateY(4px); }
+  70% { opacity: 1; transform: translateX(-50%) scale(1.01) translateY(-1px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+@keyframes pill-appear-below {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.96) translateY(-4px); }
+  70% { opacity: 1; transform: translateX(-50%) scale(1.01) translateY(1px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+}
+
+.comment-pill-below {
+  animation: pill-appear-below 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .comment-pill:hover {
   background: var(--button-hover-bg, #A14A2F);
+  transform: translateX(-50%) scale(1.03);
+}
+
+.comment-pill:active {
+  transform: translateX(-50%) scale(0.97);
 }
 
 .pill-keys {

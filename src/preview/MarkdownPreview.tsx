@@ -8,7 +8,7 @@ import { useEffect, useRef, useMemo, useState, useCallback, useLayoutEffect, for
 import Avatar from "boring-avatars"
 import { renderMarkdown } from "../sanitize"
 
-import { parseWithPositions, clearHighlights } from "./markedPositions"
+import { parseWithPositions, clearHighlights, domRangeToSourceRange } from "./markedPositions"
 import { useTextSelection } from "./useTextSelection"
 import { createAnchor as createAnchorFn, resolveAnchor } from "../comments/anchoring"
 import { computePopoverPositions } from "../comments/popoverPositioning"
@@ -333,7 +333,21 @@ export default function MarkdownPreview({
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "m") {
         e.preventDefault()
         if (pillPos && commentsVisible && !draftComment) {
-          setDraftComment({ from: pillPos.from, to: pillPos.to, top: pillPos.top + 36 + 4 })
+          let { from, to } = pillPos
+          if (from === -1 || to === -1) {
+            const sel = window.getSelection()
+            if (sel && !sel.isCollapsed && sel.rangeCount) {
+              const srcRange = domRangeToSourceRange(sel.getRangeAt(0))
+              if (srcRange) { from = srcRange.start; to = srcRange.end }
+            }
+            if ((from === -1 || to === -1) && pillPos.selectedText) {
+              const idx = content.indexOf(pillPos.selectedText)
+              if (idx >= 0) { from = idx; to = idx + pillPos.selectedText.length }
+            }
+          }
+          if (from >= 0 && to >= 0) {
+            setDraftComment({ from, to, top: pillPos.top + 36 + 4 })
+          }
           setPillPos(null)
         }
       }
@@ -438,20 +452,50 @@ export default function MarkdownPreview({
         <div ref={contentRef} className="md-preview-content" />
         {commentsVisible && pillPos && !draftComment && (
           <button
-            className="comment-pill"
+            className={`comment-pill ${pillPos.direction === "below" ? "comment-pill-below" : ""}`}
             aria-label="Add comment on selection"
             style={{ top: pillPos.top, left: pillPos.left }}
             onMouseDown={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              setDraftComment({ from: pillPos.from, to: pillPos.to, top: pillPos.top + 36 + 4 })
+              let { from, to } = pillPos
+              // Resolve source offsets if they weren't captured on mouseup
+              if (from === -1 || to === -1) {
+                const sel = window.getSelection()
+                if (sel && !sel.isCollapsed && sel.rangeCount) {
+                  const srcRange = domRangeToSourceRange(sel.getRangeAt(0))
+                  if (srcRange) { from = srcRange.start; to = srcRange.end }
+                }
+                // Fallback: search for selected text in content
+                if ((from === -1 || to === -1) && pillPos.selectedText) {
+                  const idx = content.indexOf(pillPos.selectedText)
+                  if (idx >= 0) { from = idx; to = idx + pillPos.selectedText.length }
+                }
+              }
+              if (from >= 0 && to >= 0) {
+                setDraftComment({ from, to, top: pillPos.top + 32 })
+              }
               setPillPos(null)
             }}
             onTouchEnd={(e) => {
               e.preventDefault()
               e.stopPropagation()
+              let { from, to } = pillPos
+              if (from === -1 || to === -1) {
+                const sel = window.getSelection()
+                if (sel && !sel.isCollapsed && sel.rangeCount) {
+                  const srcRange = domRangeToSourceRange(sel.getRangeAt(0))
+                  if (srcRange) { from = srcRange.start; to = srcRange.end }
+                }
+                if ((from === -1 || to === -1) && pillPos.selectedText) {
+                  const idx = content.indexOf(pillPos.selectedText)
+                  if (idx >= 0) { from = idx; to = idx + pillPos.selectedText.length }
+                }
+              }
               window.getSelection()?.removeAllRanges()
-              setDraftComment({ from: pillPos.from, to: pillPos.to, top: pillPos.top + 36 + 4 })
+              if (from >= 0 && to >= 0) {
+                setDraftComment({ from, to, top: pillPos.top + 32 })
+              }
               setPillPos(null)
             }}
           >

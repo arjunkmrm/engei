@@ -1,10 +1,11 @@
 /**
- * Floating "Comment" pill that appears when text is selected in the editor.
- * Positioned above the selection center.
+ * Floating "Comment" pill that appears when text is selected in the source editor.
+ * Centered above the selection. No mouse coordinate tracking.
  */
 
 import { useEffect, useState, useCallback } from "react"
 import type { EditorView } from "@codemirror/view"
+import { computePillPosition } from "./pillPositioning"
 
 interface Props {
   view: EditorView | null
@@ -12,7 +13,9 @@ interface Props {
 }
 
 export default function CommentPill({ view, onComment }: Props) {
-  const [pos, setPos] = useState<{ top: number; left: number; from: number; to: number } | null>(null)
+  const [pos, setPos] = useState<{
+    top: number; left: number; from: number; to: number; direction: "above" | "below"
+  } | null>(null)
 
   const updatePosition = useCallback(() => {
     if (!view) { setPos(null); return }
@@ -24,14 +27,22 @@ export default function CommentPill({ view, onComment }: Props) {
     const endCoords = view.coordsAtPos(sel.to)
     if (!startCoords || !endCoords) { setPos(null); return }
 
-    const editorRect = view.dom.parentElement!.getBoundingClientRect()
-    const topY = Math.min(startCoords.top, endCoords.top)
-    const centerX = (startCoords.left + endCoords.right) / 2
+    const parent = view.dom.parentElement!
+    const editorRect = parent.getBoundingClientRect()
+
+    const selTop = Math.min(startCoords.top, endCoords.top) - editorRect.top
+    const selBottom = Math.max(startCoords.bottom, endCoords.bottom) - editorRect.top
+    const selCenterX = ((startCoords.left + endCoords.right) / 2) - editorRect.left
+
+    const viewportRoomAbove = Math.min(startCoords.top, endCoords.top)
+    const placement = computePillPosition(selTop, selBottom, selCenterX, editorRect.width, viewportRoomAbove)
+
     setPos({
-      top: topY - editorRect.top - 36,
-      left: centerX - editorRect.left,
+      top: placement.top,
+      left: placement.left,
       from: sel.from,
       to: sel.to,
+      direction: placement.direction,
     })
   }, [view])
 
@@ -39,7 +50,7 @@ export default function CommentPill({ view, onComment }: Props) {
     if (!view) return
 
     const handleMouseDown = () => setPos(null)
-    const handleMouseUp = () => requestAnimationFrame(updatePosition)
+    const handleMouseUp = () => updatePosition()
     const handleScroll = () => setPos(null)
 
     view.dom.addEventListener("mousedown", handleMouseDown)
@@ -57,7 +68,7 @@ export default function CommentPill({ view, onComment }: Props) {
 
   return (
     <button
-      className="comment-pill"
+      className={`comment-pill ${pos.direction === "below" ? "comment-pill-below" : ""}`}
       aria-label="Add comment on selection"
       style={{ top: pos.top, left: pos.left }}
       onMouseDown={(e) => {
