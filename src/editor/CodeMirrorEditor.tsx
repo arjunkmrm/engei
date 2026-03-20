@@ -133,5 +133,5 @@ export default function CodeMirrorEditor({
     syncComments()
   }, [syncComments])
 
-  return <div ref={containerRef} className="koen-editor-cm" />
+  return <div ref={containerRef} className="koen-editor-cm" data-readonly={readOnly || undefined} />
 }

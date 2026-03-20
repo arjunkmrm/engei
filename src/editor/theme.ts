@@ -15,8 +15,14 @@ export function buildSonoTheme(isDark: boolean) {
     ".cm-cursor, .cm-dropCursor": {
       borderLeftColor: "var(--editor-cursor)",
     },
-    "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection": {
+    "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
       background: "var(--editor-selection)",
+    },
+    "& .cm-selectionBackground, .cm-content ::selection": {
+      background: "var(--editor-selection)",
+    },
+    "& .cm-content :focus::selection, & .cm-content :focus ::selection, & .cm-line ::selection, & .cm-line::selection": {
+      background: "var(--editor-selection) !important",
     },
     ".cm-activeLine": {
       backgroundColor: "var(--editor-line-highlight)",
