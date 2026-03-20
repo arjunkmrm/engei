@@ -48,8 +48,8 @@ export interface EditorProps {
 
   /** Content changed */
   onChange?: (content: string) => void
-  /** New comment created from selection — receives computed anchor */
-  onCreateComment?: (anchor: Anchor) => void
+  /** New comment created from selection — receives computed anchor and optional body */
+  onCreateComment?: (anchor: Anchor, body?: string) => void
   /** Draft comment body submitted */
   onUpdateComment?: (commentId: string, body: string) => void
   /** Comment resolved/deleted */

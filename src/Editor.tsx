@@ -66,8 +66,14 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
       onCreateComment?.(anchor)
     } else {
       // Preview draft submission — find the comment and update it
-      const comment = comments.find(c => c.anchor.exact === anchor.exact && c.anchor.hint === anchor.hint)
-      if (comment) onUpdateComment?.(comment.id, body)
+      const comment = comments.find(c => c.anchor.exact === anchor.exact && c.anchor.hint === anchor.hint && !c.body)
+      if (comment) {
+        onUpdateComment?.(comment.id, body)
+      } else {
+        // Preview submits anchor+body in one shot (draft was local to MarkdownPreview).
+        // Pass body to onCreateComment so FolderView can create + persist.
+        onCreateComment?.(anchor, body)
+      }
     }
   }, [onCreateComment, onUpdateComment, comments])
 
