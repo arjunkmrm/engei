@@ -14,7 +14,7 @@ interface Props {
   content: string
   activeCommentId: string | null
   onActiveCommentChange: (id: string | null) => void
-  onDeleteComment: (id: string) => void
+  onDeleteComment?: (id: string) => void
   onSubmitBody: (id: string, body: string) => void
   onAddReply: (commentId: string, body: string) => void
 }
