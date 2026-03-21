@@ -107,10 +107,10 @@ export function useTextSelection(
       })
     }
 
-    el.addEventListener("mousedown", handleMouseDown)
+    document.addEventListener("mousedown", handleMouseDown)
     document.addEventListener("mouseup", handleMouseUp)
     return () => {
-      el.removeEventListener("mousedown", handleMouseDown)
+      document.removeEventListener("mousedown", handleMouseDown)
       document.removeEventListener("mouseup", handleMouseUp)
     }
   }, [dep, containerRef])
