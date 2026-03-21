@@ -27,26 +27,26 @@
 }
 
 .koen-editor[data-theme="light"] {
-  --editor-bg: #ffffff;
+  --editor-bg: #faf8f5;
   --editor-fg: #37352f;
   --editor-cursor: #37352f;
   --editor-selection: rgba(193, 95, 60, 0.12);
   --editor-line-highlight: rgba(0, 0, 0, 0.03);
   --editor-line-number: #b0a898;
   --editor-line-number-active: #6a6058;
-  --widget-bg: #f7f6f3;
-  --widget-border: #e3e2de;
-  --sidebar-bg: #fbfbfa;
+  --widget-bg: #f2f0eb;
+  --widget-border: #e0ddd6;
+  --sidebar-bg: #f5f3ef;
   --accent: #C15F3C;
   --highlight-bg: rgba(193, 95, 60, 0.18);
   --highlight-bg-hover: rgba(193, 95, 60, 0.30);
   --highlight-border: rgba(193, 95, 60, 0.45);
   --button-hover-bg: #A14A2F;
   --icon-fg: #8a8078;
-  --panel-bg: #ffffff;
+  --panel-bg: #faf8f5;
   --tab-fg-inactive: #999;
-  --code-block-bg: #f7f6f3;
-  --inline-code-bg: rgba(0, 0, 0, 0.06);
+  --code-block-bg: #f2f0eb;
+  --inline-code-bg: rgba(80, 60, 40, 0.07);
   --hover-bg: rgba(128, 128, 128, 0.1);
   --hover-bg-strong: rgba(128, 128, 128, 0.16);
 }
