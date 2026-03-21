@@ -675,7 +675,7 @@
 .md-preview {
   display: flex;
   justify-content: center;
-  padding: 48px 48px 160px;
+  padding: 48px 48px 96px;
   gap: 32px;
   position: relative;
   color: var(--editor-fg);
