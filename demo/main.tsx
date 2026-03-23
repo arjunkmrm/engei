@@ -88,6 +88,14 @@ Check in to Nostalgia Hotel Yonghe Lama and rest up.
 
 ---
 
+## Globe Test
+
+\`\`\`globe
+{"markers":[{"location":[39.90,116.41],"size":0.05},{"location":[1.35,103.82],"size":0.05}],"arcs":[{"from":[1.35,103.82],"to":[39.90,116.41]}],"theta":0.15,"phi":1.8}
+\`\`\`
+
+---
+
 > **Passenger:** Mr Arjun Kumar Muthukumar
 
 _

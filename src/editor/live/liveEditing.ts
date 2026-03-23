@@ -23,6 +23,7 @@ import type { DecorationSet } from "@codemirror/view"
 import { StateField, RangeSet, type Range, type SelectionRange, type EditorState, type Extension } from "@codemirror/state"
 import type { WidgetPlugin } from "engei-widgets"
 import { LiveWidgetType } from "./LiveWidgetType"
+import { LiveImageType } from "./LiveImageType"
 
 // Table decorations — using BlockWrapper for real table layout
 const tableWrapper = BlockWrapper.create({ tagName: "div", attributes: { class: "cm-md-table" } })
@@ -228,6 +229,27 @@ export function buildDecorations(
         if (node.name === "Blockquote") {
           widgets.push(blockquoteMark.range(node.from, node.to))
           return // process children for QuoteMark hiding
+        }
+
+        // Images — render inline when cursor is not on the line
+        if (node.name === "Image") {
+          if (!cursorOnLine(state, state.selection.ranges, node.from, node.to)) {
+            const urlNode = node.node.getChild("URL")
+            const src = urlNode ? state.doc.sliceString(urlNode.from, urlNode.to) : ""
+            // Extract alt text: between first ![  and  ]
+            const full = state.doc.sliceString(node.from, node.to)
+            const altMatch = full.match(/^!\[([^\]]*)\]/)
+            const alt = altMatch ? altMatch[1] : ""
+            if (src && node.from < node.to) {
+              const imgDeco = Decoration.replace({
+                widget: new LiveImageType(src, alt, theme),
+                block: true,
+              })
+              widgets.push(imgDeco.range(node.from, node.to))
+              return false
+            }
+          }
+          return // let children handle LinkMark/URL hiding
         }
 
         // Fenced code blocks — style the block or render widget
