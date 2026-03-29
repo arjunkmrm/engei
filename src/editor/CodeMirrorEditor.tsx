@@ -6,9 +6,12 @@
 
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, basicSetup } from "codemirror"
+import { keymap } from "@codemirror/view"
+import { indentWithTab } from "@codemirror/commands"
 import { EditorState, Compartment } from "@codemirror/state"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
+import { markdownKeymap } from "./markdown-commands"
 import { commentField, setComments } from "../comments/CommentDecoration"
 import { resolveAnchor } from "../comments/anchoring"
 import { createLiveEditing } from "./live/liveEditing"
@@ -60,6 +63,7 @@ export default function CodeMirrorEditor({
 
     const extensions = [
       basicSetup,
+      keymap.of([indentWithTab, ...markdownKeymap]),
       themeComp.current.of(buildSonoTheme(isDark)),
       syntaxComp.current.of(getSyntaxHighlighting(isDark)),
       EditorView.lineWrapping,

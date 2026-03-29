@@ -1,7 +1,17 @@
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createRoot } from "react-dom/client"
-import { Editor, getDefaultWidgets } from "../src/index"
+import { Editor, getDefaultWidgets, type EditorHandle } from "../src/index"
+import { enablePretext, setPretextWidth } from "@codemirror/view"
+import { toggleBold, toggleItalic, toggleCode, toggleStrikethrough } from "../src/editor/markdown-commands"
+import { indentWithTab } from "@codemirror/commands"
 import "../src/styles/engei.css"
+
+declare global {
+  interface Window {
+    __cm: any
+    __commands: any
+  }
+}
 
 const widgets = getDefaultWidgets()
 
@@ -175,10 +185,66 @@ Some more text after the heading. **Bold with *nested italic* inside**.
 Normal paragraph to end.
 `
 
+// Allow loading fixtures via ?fixture=path query param (for Playwright tests)
+const fixtureParam = new URLSearchParams(window.location.search).get("fixture")
+
 function App() {
   const [content, setContent] = useState(SAMPLE_MD)
+  const [fixtureLoaded, setFixtureLoaded] = useState(false)
+
+  useEffect(() => {
+    if (fixtureParam) {
+      fetch(fixtureParam)
+        .then(r => r.text())
+        .then(text => { setContent(text); setFixtureLoaded(true) })
+        .catch(() => setFixtureLoaded(true))
+    } else {
+      setFixtureLoaded(true)
+    }
+  }, [])
   const [mode, setMode] = useState<"source" | "preview" | "live">("live")
   const [theme, setTheme] = useState<"dark" | "light">("dark")
+  const editorRef = useRef<HTMLDivElement>(null)
+  const editorHandle = useRef<EditorHandle>(null)
+
+  // Expose EditorView + commands on window for Playwright tests
+  useEffect(() => {
+    window.__commands = { toggleBold, toggleItalic, toggleCode, toggleStrikethrough, indentWithTab }
+    const poll = setInterval(() => {
+      const view = editorHandle.current?.getView()
+      if (view) {
+        window.__cm = view
+        clearInterval(poll)
+      }
+    }, 100)
+    return () => clearInterval(poll)
+  }, [])
+
+  // Enable Pretext height oracle
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el) return
+    const observer = new ResizeObserver((entries) => {
+      const content = el.querySelector(".cm-content")
+      if (content) {
+        const width = content.getBoundingClientRect().width
+        if (width > 0) {
+          enablePretext(width)
+          setPretextWidth(width)
+        }
+      }
+    })
+    observer.observe(el)
+    // Initial measurement
+    requestAnimationFrame(() => {
+      const content = el.querySelector(".cm-content")
+      if (content) {
+        const width = content.getBoundingClientRect().width
+        if (width > 0) enablePretext(width)
+      }
+    })
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
@@ -191,8 +257,9 @@ function App() {
           <option value="light">Light</option>
         </select>
       </div>
-      <div id="editor-root" style={{ flex: 1, minHeight: 0 }}>
+      <div id="editor-root" ref={editorRef} style={{ flex: 1, minHeight: 0 }}>
         <Editor
+          ref={editorHandle}
           content={content}
           filename="demo.md"
           mode={mode}
