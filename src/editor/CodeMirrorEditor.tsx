@@ -8,13 +8,13 @@ import { useEffect, useRef, useCallback } from "react"
 import { EditorView, basicSetup } from "codemirror"
 import { keymap } from "@codemirror/view"
 import { indentWithTab } from "@codemirror/commands"
-import { EditorState, Compartment } from "@codemirror/state"
+import { EditorState, Compartment, Prec } from "@codemirror/state"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
 import { markdownKeymap } from "./markdown-commands"
 import { commentField, setComments } from "../comments/CommentDecoration"
 import { resolveAnchor } from "../comments/anchoring"
-import { createLiveEditing } from "./live/liveEditing"
+import { liveDefaults } from "./live"
 import type { Comment } from "../types"
 import type { WidgetPlugin } from "engei-widgets"
 
@@ -63,7 +63,7 @@ export default function CodeMirrorEditor({
 
     const extensions = [
       basicSetup,
-      keymap.of([indentWithTab, ...markdownKeymap]),
+      Prec.high(keymap.of([indentWithTab, ...markdownKeymap])),
       themeComp.current.of(buildSonoTheme(isDark)),
       syntaxComp.current.of(getSyntaxHighlighting(isDark)),
       EditorView.lineWrapping,
@@ -71,7 +71,7 @@ export default function CodeMirrorEditor({
       langComp.current.of(getLanguage(filename)),
       commentField,
       readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
-      ...(liveMode ? [createLiveEditing(widgets, isDark ? "dark" : "light")] : []),
+      ...(liveMode ? liveDefaults({ widgets, theme: isDark ? "dark" : "light" }) : []),
       EditorView.updateListener.of(update => {
         if (update.docChanged && !suppressChangeRef.current) {
           onChangeRef.current?.(update.state.doc.toString())

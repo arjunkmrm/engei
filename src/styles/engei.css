@@ -95,19 +95,14 @@
 }
 .koen-editor-live .cm-activeLine { background: transparent; }
 
-/* Hidden syntax markers — font-size:0 hides text visually.
-   NO width:0 — CM6 InlineCoordsScan skips zero-width rects.
-   NO line-height:0 — changes cm-line measured height. */
-.cm-live-hidden {
-  font-size: 0 !important;
-  letter-spacing: 0 !important;
-  display: inline !important;
-  color: transparent;
-  overflow: hidden;
+/* Syntax markers — visible but muted so the user sees raw markdown
+   that is also visually formatted. No hidden characters, no cursor confusion. */
+.cm-live-marker {
+  opacity: 0.35;
 }
 
 /* Headings — match preview exactly */
-[class*="cm-live-h"] > span:not(.cm-live-hidden) {
+[class*="cm-live-h"] > span:not(.cm-live-marker) {
   color: var(--editor-fg) !important;
 }
 /* Heading marks: only font-weight and color — NO font-size (breaks heightmap) */

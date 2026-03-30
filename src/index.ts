@@ -4,7 +4,7 @@ export type { EditorHandle } from "./Editor"
 
 // Workspace — batteries-included editor experience
 export { default as Workspace } from "./Workspace"
-export type { WorkspaceProps, WorkspaceFile, DataProvider, WorkspaceEventType } from "./workspace-types"
+export type { WorkspaceProps, WorkspaceFile, DataProvider, WorkspaceEventType, WorkspaceSwitcherConfig } from "./workspace-types"
 
 // File tree
 export { default as FileTree } from "./tree/FileTree"
@@ -36,13 +36,16 @@ export {
   katexPlugin,
   tablePlugin,
   embedPlugin,
-  excalidrawPlugin,
+  sketchPlugin,
   mapPlugin,
   timelinePlugin,
   calendarPlugin,
   htmlPlugin,
 } from "engei-widgets"
 export type { WidgetSpec, WidgetHydrator } from "engei-widgets"
+
+// Live editing extensions (composable CM6 extensions)
+export { liveDefaults, headings, emphasis, strikethrough, tables, codeBlocks, images, widgetExtension, blockquotes, tasks, horizontalRules, listIndent, selectionOverlaps, cursorOnLine } from "./editor/live"
 
 // Styles — import "engei/styles" in your app
 import "./styles/engei.css"
