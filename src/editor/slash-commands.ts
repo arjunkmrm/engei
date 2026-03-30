@@ -2,13 +2,13 @@
  * Slash command extension for CodeMirror 6.
  *
  * When the user types `/` at the start of a line, shows a placeholder
- * "Describe what to create...". On Enter, extracts the prompt and calls
- * the onSlashCommand callback. The callback returns markdown to insert.
+ * "Describe what to create...". On Enter, extracts the prompt, shows
+ * a spinner, and calls the onSlashCommand callback.
  */
 
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view"
 import type { DecorationSet } from "@codemirror/view"
-import { Facet, type Extension, type Range } from "@codemirror/state"
+import { Facet, StateField, StateEffect, type Extension, type Range } from "@codemirror/state"
 
 // ─── Facet for the callback ────────────────────────────────
 
@@ -18,7 +18,21 @@ export const slashCommandHandler = Facet.define<SlashCommandHandler, SlashComman
   combine: (values) => values.length > 0 ? values[values.length - 1] : null,
 })
 
-// ─── Placeholder widget ────────────────────────────────────
+// ─── State: which line is loading ──────────────────────────
+
+const setLoading = StateEffect.define<{ lineFrom: number } | null>()
+
+const loadingState = StateField.define<number | null>({
+  create: () => null,
+  update(value, tr) {
+    for (const e of tr.effects) {
+      if (e.is(setLoading)) return e.value?.lineFrom ?? null
+    }
+    return value
+  },
+})
+
+// ─── Widgets ───────────────────────────────────────────────
 
 class SlashPlaceholder extends WidgetType {
   toDOM() {
@@ -27,34 +41,100 @@ class SlashPlaceholder extends WidgetType {
     span.textContent = "Describe what to create..."
     return span
   }
+  ignoreEvent() { return true }
+}
 
+class SpinnerWidget extends WidgetType {
+  toDOM() {
+    const span = document.createElement("span")
+    span.className = "cm-slash-spinner"
+    return span
+  }
   ignoreEvent() { return true }
 }
 
 const placeholder = new SlashPlaceholder()
+const spinner = new SpinnerWidget()
 
-// ─── ViewPlugin: decorations + Enter handler ───────────────
+// ─── ViewPlugin: decorations ───────────────────────────────
 
 function buildDecos(view: EditorView): DecorationSet {
   const { state } = view
   const { head } = state.selection.main
   const line = state.doc.lineAt(head)
+  const loadingLine = state.field(loadingState)
   const decos: Range<Decoration>[] = []
 
-  // Only show placeholder when line is exactly "/" (just the slash, nothing typed yet)
-  if (line.text === "/") {
-    decos.push(
-      Decoration.line({ class: "cm-slash-line" }).range(line.from),
-      Decoration.widget({ widget: placeholder, side: 1 }).range(line.to),
-    )
-  } else if (line.text.startsWith("/") && line.text.length > 1) {
-    // User is typing a prompt — style the line
-    decos.push(
-      Decoration.line({ class: "cm-slash-line cm-slash-typing" }).range(line.from),
-    )
+  // Loading spinner on the loading line
+  if (loadingLine !== null) {
+    try {
+      const lLine = state.doc.lineAt(loadingLine)
+      if (lLine.text.startsWith("/")) {
+        decos.push(Decoration.line({ class: "cm-slash-line" }).range(lLine.from))
+        decos.push(Decoration.widget({ widget: spinner, side: 1 }).range(lLine.to))
+      }
+    } catch {}
+  }
+
+  // Only show placeholder/styling when NOT loading
+  if (loadingLine === null) {
+    if (line.text === "/") {
+      decos.push(
+        Decoration.line({ class: "cm-slash-line" }).range(line.from),
+        Decoration.widget({ widget: placeholder, side: 1 }).range(line.to),
+      )
+    } else if (line.text.startsWith("/") && line.text.length > 1) {
+      decos.push(
+        Decoration.line({ class: "cm-slash-line" }).range(line.from),
+      )
+    }
   }
 
   return Decoration.set(decos, true)
+}
+
+/** Enter command for slash lines. Call before smartEnter in the keymap. */
+export function slashEnter(view: EditorView): boolean {
+  const { state } = view
+  const { head } = state.selection.main
+  const line = state.doc.lineAt(head)
+
+  if (!line.text.startsWith("/") || line.text.length <= 1) return false
+
+  const prompt = line.text.slice(1).trim()
+  if (!prompt) return false
+
+  const handler = state.facet(slashCommandHandler)
+  if (!handler) return false
+
+  // Gather context
+  const startLine = Math.max(1, line.number - 50)
+  const contextLines: string[] = []
+  for (let ln = startLine; ln < line.number; ln++) {
+    contextLines.push(state.doc.line(ln).text)
+  }
+  const context = contextLines.join("\n")
+
+  // Set loading state — spinner will appear via decoration
+  const lineFrom = line.from
+  view.dispatch({ effects: setLoading.of({ lineFrom }) })
+
+  handler(prompt, context).then((markdown) => {
+    // Clear loading, replace the /prompt line with result
+    const currentLine = view.state.doc.lineAt(lineFrom)
+    view.dispatch({
+      effects: setLoading.of(null),
+      changes: { from: currentLine.from, to: currentLine.to, insert: markdown },
+    })
+  }).catch((err) => {
+    const currentLine = view.state.doc.lineAt(lineFrom)
+    view.dispatch({
+      effects: setLoading.of(null),
+      changes: { from: currentLine.from, to: currentLine.to, insert: `> Error: ${err.message || err}` },
+    })
+  })
+
+  return true
 }
 
 export function slashCommands(): Extension {
@@ -62,7 +142,7 @@ export function slashCommands(): Extension {
     (view) => ({
       decorations: buildDecos(view),
       update(update: ViewUpdate) {
-        if (update.docChanged || update.selectionSet) {
+        if (update.docChanged || update.selectionSet || update.transactions.some(t => t.effects.some(e => e.is(setLoading)))) {
           this.decorations = buildDecos(update.view)
         }
       },
@@ -70,58 +150,5 @@ export function slashCommands(): Extension {
     { decorations: (v) => v.decorations },
   )
 
-  // Keymap: intercept Enter on a slash command line
-  const enterHandler = EditorView.domEventHandlers({
-    keydown(event, view) {
-      if (event.key !== "Enter") return false
-
-      const { state } = view
-      const { head } = state.selection.main
-      const line = state.doc.lineAt(head)
-
-      // Only handle lines starting with /
-      if (!line.text.startsWith("/") || line.text.length <= 1) return false
-
-      const prompt = line.text.slice(1).trim()
-      if (!prompt) return false
-
-      event.preventDefault()
-
-      const handler = state.facet(slashCommandHandler)
-      if (!handler) return true
-
-      // Gather context: preceding lines (up to 50 lines above)
-      const startLine = Math.max(1, line.number - 50)
-      const contextLines: string[] = []
-      for (let ln = startLine; ln < line.number; ln++) {
-        contextLines.push(state.doc.line(ln).text)
-      }
-      const context = contextLines.join("\n")
-
-      // Replace the /prompt line with a loading indicator
-      const loadingText = `> Generating...`
-      view.dispatch({
-        changes: { from: line.from, to: line.to, insert: loadingText },
-      })
-
-      // Call the handler
-      handler(prompt, context).then((markdown) => {
-        // Replace the loading indicator with the generated content
-        const currentLine = view.state.doc.lineAt(line.from)
-        view.dispatch({
-          changes: { from: currentLine.from, to: currentLine.to, insert: markdown },
-        })
-      }).catch((err) => {
-        // Replace loading with error
-        const currentLine = view.state.doc.lineAt(line.from)
-        view.dispatch({
-          changes: { from: currentLine.from, to: currentLine.to, insert: `> Error: ${err.message || err}` },
-        })
-      })
-
-      return true
-    },
-  })
-
-  return [plugin, enterHandler]
+  return [plugin, loadingState]
 }

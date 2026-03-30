@@ -70,6 +70,245 @@
   background: var(--hover-bg);
 }
 
+.mode-toggle {
+  display: flex;
+  gap: 1px;
+  background: var(--widget-border, #333);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 4px;
+}
+
+.mode-toggle-btn {
+  background: var(--editor-bg, #1a1816);
+  border: none;
+  color: inherit;
+  opacity: 0.4;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 11px;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.mode-toggle-btn:hover {
+  opacity: 0.7;
+}
+
+.mode-toggle-btn.active {
+  opacity: 1;
+  background: var(--hover-bg-strong, rgba(128, 128, 128, 0.18));
+}
+
+/* ─── Workspace Switcher ──────────────────────────────────── */
+
+.engei-workspace-switcher {
+  margin: 0 4px;
+}
+
+.engei-ws-trigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  margin: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  cursor: pointer;
+  text-align: left;
+}
+
+.engei-ws-trigger .koen-tree-label {
+  flex: none;
+}
+
+.engei-ws-chevron {
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: transform 0.15s ease;
+}
+
+.engei-ws-chevron.open {
+  transform: rotate(180deg);
+}
+
+.engei-ws-popover {
+  position: absolute;
+  top: 100%;
+  left: 4px;
+  right: 4px;
+  margin-top: 4px;
+  background: var(--sidebar-bg, var(--editor-bg, #1a1816));
+  border: 1px solid var(--widget-border, #333);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  z-index: 200;
+}
+
+.engei-ws-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--editor-fg, #e8e6e3);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.engei-ws-item:hover {
+  background: var(--hover-bg);
+}
+
+.engei-ws-item.active {
+  font-weight: 500;
+}
+
+.engei-ws-item.active svg {
+  opacity: 0.5;
+}
+
+.engei-ws-item.create {
+  gap: 6px;
+  justify-content: flex-start;
+  opacity: 0.6;
+}
+
+.engei-ws-item.create:hover {
+  opacity: 1;
+}
+
+.engei-ws-divider {
+  height: 1px;
+  background: var(--widget-border, #333);
+  margin: 4px 6px;
+}
+
+/* ─── Dialog ──────────────────────────────────────────────── */
+
+.engei-dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.engei-dialog {
+  background: var(--sidebar-bg, var(--editor-bg, #1a1816));
+  border: 1px solid var(--widget-border, #333);
+  border-radius: 12px;
+  padding: 32px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.engei-dialog-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--editor-fg, #e8e6e3);
+}
+
+.engei-dialog-description {
+  font-size: 13px;
+  color: var(--editor-fg, #e8e6e3);
+  opacity: 0.5;
+  margin-bottom: 24px;
+}
+
+.engei-dialog-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--editor-fg, #e8e6e3);
+  opacity: 0.6;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.engei-dialog-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--editor-bg, #1a1816);
+  color: var(--editor-fg, #e8e6e3);
+  border: 1px solid var(--widget-border, #333);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.engei-dialog-input:focus {
+  border-color: var(--widget-border-hover, #555);
+}
+
+.engei-dialog-input::placeholder {
+  color: var(--editor-fg, #e8e6e3);
+  opacity: 0.3;
+}
+
+.engei-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.engei-dialog-btn {
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: 1px solid var(--widget-border, #333);
+  background: transparent;
+  color: var(--editor-fg, #e8e6e3);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+
+.engei-dialog-btn:hover {
+  background: var(--hover-bg);
+}
+
+.engei-dialog-btn.primary {
+  background: var(--editor-fg, #e8e6e3);
+  color: var(--editor-bg, #1a1816);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.engei-dialog-btn.primary:hover {
+  opacity: 0.85;
+}
+
+.engei-dialog-btn.primary:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+
 /* ─── Backdrop (mobile) ───────────────────────────────────── */
 
 .workspace-backdrop {

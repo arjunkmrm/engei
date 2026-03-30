@@ -78,7 +78,8 @@ export default function CodeMirrorEditor({
       readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
       ...(liveMode ? liveDefaults({ widgets, theme: isDark ? "dark" : "light" }) : []),
       typographicReplacements,
-      ...(onSlashCommand ? [slashCommands(), slashCommandHandler.of(onSlashCommand)] : []),
+      slashCommands(),
+      ...(onSlashCommand ? [slashCommandHandler.of(onSlashCommand)] : []),
       EditorView.updateListener.of(update => {
         if (update.docChanged && !suppressChangeRef.current) {
           onChangeRef.current?.(update.state.doc.toString())

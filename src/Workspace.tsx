@@ -181,7 +181,7 @@ export default function Workspace({
   sidebarExtra,
   emptyState,
   rootName = "workspace",
-  markdownMode = "preview",
+  markdownMode: initialMarkdownMode = "preview",
   onSlashCommand,
   widgets = defaultWidgets,
   saveMode = "auto",
@@ -194,6 +194,7 @@ export default function Workspace({
 }: WorkspaceProps) {
   const [internalFiles, setInternalFiles] = useState<WorkspaceFile[]>(files)
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 640 : true)
+  const [markdownMode, setMarkdownMode] = useState<"source" | "preview" | "live">(initialMarkdownMode)
   const [copied, setCopied] = useState(false)
   const [showCreateWs, setShowCreateWs] = useState(false)
   const [newWsName, setNewWsName] = useState("")
@@ -532,6 +533,19 @@ export default function Workspace({
             ))}
           </nav>
           <div className="header-spacer" />
+          {file && /\.(md|mdx)$/i.test(file.path) && (
+            <div className="mode-toggle">
+              <button className={`mode-toggle-btn ${markdownMode === "source" ? "active" : ""}`} onClick={() => setMarkdownMode("source")} title="Source">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>
+              </button>
+              <button className={`mode-toggle-btn ${markdownMode === "live" ? "active" : ""}`} onClick={() => setMarkdownMode("live")} title="Live">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/></svg>
+              </button>
+              <button className={`mode-toggle-btn ${markdownMode === "preview" ? "active" : ""}`} onClick={() => setMarkdownMode("preview")} title="Preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          )}
           {file && (
             <button
               className="workspace-action"
@@ -554,8 +568,8 @@ export default function Workspace({
             <Editor
               content={file.content}
               filename={file.path}
-              comments={file.comments}
-              commentsLocked={commentsLocked}
+              comments={markdownMode === "preview" ? file.comments : []}
+              commentsLocked={markdownMode !== "preview" || commentsLocked}
               readOnly={readOnly}
               mode={/\.(md|mdx)$/i.test(file.path) ? markdownMode : "source"}
               theme={theme}

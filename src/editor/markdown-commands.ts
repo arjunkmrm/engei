@@ -6,6 +6,7 @@
  */
 
 import { insertNewlineContinueMarkup, deleteMarkupBackward } from "@codemirror/lang-markdown"
+import { slashEnter } from "./slash-commands"
 import { syntaxTree } from "@codemirror/language"
 import type { KeyBinding } from "@codemirror/view"
 import type { ChangeSpec } from "@codemirror/state"
@@ -358,6 +359,7 @@ export const typographicReplacements = EditorView.updateListener.of((update) => 
 export const markdownKeymap: KeyBinding[] = [
   { key: "Tab", run: smartTab },
   { key: "Shift-Tab", run: smartShiftTab },
+  { key: "Enter", run: slashEnter },
   { key: "Enter", run: smartEnter },
   { key: "Shift-Enter", run: insertSoftNewline },
   { key: "Backspace", run: deleteMarkupBackward },

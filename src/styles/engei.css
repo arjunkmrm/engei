@@ -327,9 +327,28 @@
 
 /* ─── Slash commands ─────────────────────────────────────── */
 
-.cm-slash-line {
-  background: var(--editor-line-highlight, rgba(255, 255, 255, 0.03));
-  border-radius: 4px;
+.cm-line.cm-slash-line {
+  background: var(--inline-code-bg, rgba(255, 255, 255, 0.06));
+  border-radius: 6px;
+  width: fit-content;
+  min-width: 200px;
+  padding-right: 8px !important;
+}
+
+.cm-slash-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 8px;
+  border: 2px solid var(--editor-line-number, #4a4540);
+  border-top-color: var(--accent, #C15F3C);
+  border-radius: 50%;
+  animation: cm-slash-spin 0.8s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes cm-slash-spin {
+  to { transform: rotate(360deg); }
 }
 
 .cm-slash-placeholder {
@@ -338,10 +357,6 @@
   pointer-events: none;
   user-select: none;
   padding-left: 4px;
-}
-
-.cm-slash-typing .cm-line {
-  color: var(--accent, #C15F3C);
 }
 
 /* ─── Comment highlight (code mode) ──────────────────────── */
