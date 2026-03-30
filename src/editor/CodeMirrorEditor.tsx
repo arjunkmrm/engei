@@ -12,7 +12,7 @@ import { EditorState, Compartment, Prec } from "@codemirror/state"
 import { indentUnit } from "@codemirror/language"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
-import { markdownKeymap } from "./markdown-commands"
+import { markdownKeymap, typographicReplacements } from "./markdown-commands"
 import { commentField, setComments } from "../comments/CommentDecoration"
 import { resolveAnchor } from "../comments/anchoring"
 import { liveDefaults } from "./live"
@@ -74,6 +74,7 @@ export default function CodeMirrorEditor({
       ...(liveMode ? [] : [commentField]),
       readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
       ...(liveMode ? liveDefaults({ widgets, theme: isDark ? "dark" : "light" }) : []),
+      typographicReplacements,
       EditorView.updateListener.of(update => {
         if (update.docChanged && !suppressChangeRef.current) {
           onChangeRef.current?.(update.state.doc.toString())

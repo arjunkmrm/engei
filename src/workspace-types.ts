@@ -23,9 +23,22 @@ export type WorkspaceEventType =
   | { type: "file:deleted"; fileId: string }
   | { type: "reload" }
 
+export interface WorkspaceSwitcherConfig {
+  /** Available workspaces */
+  items: { id: string; name: string }[]
+  /** Currently active workspace ID */
+  activeId: string
+  /** Called when user selects a workspace */
+  onSwitch: (id: string) => void
+  /** Called when user creates a new workspace (omit to hide "new" option) */
+  onCreate?: (name: string) => void
+}
+
 export interface WorkspaceProps {
   /** Files to display */
   files: WorkspaceFile[]
+  /** Explicit empty folder paths (folders with no files) */
+  folders?: string[]
   /** Folder/project title for breadcrumb root */
   title?: string
   /** Disable editing */
@@ -51,6 +64,20 @@ export interface WorkspaceProps {
 
   /** Extra elements in the header (share button, app-specific actions) */
   headerExtra?: React.ReactNode
+  /** Extra elements at the top of the sidebar (back button, etc.) */
+  sidebarExtra?: React.ReactNode
+  /** Workspace switcher — if provided, renders a dropdown at the top of the sidebar */
+  workspaces?: WorkspaceSwitcherConfig
+  /** Called when user clicks the "+" button to create a new file. Optional folderPath for context-menu "New File" inside a folder. */
+  onCreateFile?: (folderPath?: string) => void
+  /** Called when user clicks the folder "+" button to create a new folder */
+  onCreateFolder?: () => void
+  /** Called when user renames a folder from the context menu */
+  onRenameFolder?: (oldPath: string, newPath: string) => void
+  /** Called when user renames a file from the context menu */
+  onRenameFile?: (fileId: string, newPath: string) => void
+  /** Called when user deletes a file from the context menu */
+  onDeleteFile?: (fileId: string) => void
   /** Content to show when no file is selected */
   emptyState?: React.ReactNode
   /** Root name in breadcrumb (e.g. folder slug) */
@@ -59,4 +86,6 @@ export interface WorkspaceProps {
   widgets?: WidgetPlugin[]
   /** Default mode for markdown files: "preview" (read-only), "live" (WYSIWYG), "source" (raw) */
   markdownMode?: "source" | "preview" | "live"
+  /** Save behavior: "auto" calls updateFile on every keystroke (default), "manual" only on Cmd/Ctrl+S */
+  saveMode?: "auto" | "manual"
 }

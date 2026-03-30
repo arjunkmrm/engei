@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react"
 import { useFileTreeStore } from "./store"
 
 export interface TreeFile {
@@ -8,11 +9,18 @@ export interface TreeFile {
 
 export interface FileTreeProps {
   files: TreeFile[]
+  folders?: string[]
   activePath?: string | null
   title?: string
   rootName?: string
   theme?: "dark" | "light"
+  indent?: number
   onFileSelect?: (file: TreeFile) => void
+  onRenameFile?: (fileId: string, newPath: string) => void
+  onDeleteFile?: (fileId: string) => void
+  onCreateFile?: (folderPath: string) => void
+  onCreateFolder?: (parentPath?: string) => void
+  onRenameFolder?: (oldPath: string, newPath: string) => void
 }
 
 // ─── Tree building ──────────────────────────────────────────
@@ -25,7 +33,7 @@ interface TreeNode {
   children: TreeNode[]
 }
 
-function buildTree(files: TreeFile[]): TreeNode[] {
+function buildTree(files: TreeFile[], folders?: string[]): TreeNode[] {
   const root: TreeNode[] = []
   const dirMap = new Map<string, TreeNode>()
 
@@ -57,6 +65,13 @@ function buildTree(files: TreeFile[]): TreeNode[] {
       const dirPath = parts.slice(0, -1).join("/")
       const parent = ensureDir(dirPath)
       parent.children.push(node)
+    }
+  }
+
+  // Include explicit empty folders
+  if (folders) {
+    for (const folderPath of folders) {
+      ensureDir(folderPath)
     }
   }
 
@@ -102,15 +117,38 @@ function TreeItem({
   depth,
   activePath,
   onFileSelect,
+  onRenameFile,
+  onDeleteFile,
+  onCreateFile,
+  onCreateFolder,
+  onRenameFolder,
 }: {
   node: TreeNode
   depth: number
   activePath?: string | null
   onFileSelect?: (file: TreeFile) => void
+  onRenameFile?: (fileId: string, newPath: string) => void
+  onDeleteFile?: (fileId: string) => void
+  onCreateFile?: (folderPath: string) => void
+  onCreateFolder?: (parentPath?: string) => void
+  onRenameFolder?: (oldPath: string, newPath: string) => void
 }) {
   const isOpen = useFileTreeStore((s) => s.expanded.has(node.path))
   const toggle = useFileTreeStore((s) => s.toggle)
   const isActive = !node.isDir && node.path === activePath
+  const [renaming, setRenaming] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setContextMenu(null)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [contextMenu])
 
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation()
@@ -121,16 +159,75 @@ function TreeItem({
     }
   }
 
+  function handleContextMenu(e: React.MouseEvent) {
+    const hasFileActions = !node.isDir && (onRenameFile || onDeleteFile)
+    const hasFolderActions = node.isDir && (onCreateFile || onCreateFolder || onRenameFolder)
+    if (!hasFileActions && !hasFolderActions) return
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
+
+  function handleRenameSubmit(newName: string) {
+    const trimmed = newName.trim()
+    if (!trimmed || trimmed === node.name) { setRenaming(false); return }
+
+    if (node.isDir && onRenameFolder) {
+      // Folder rename: compute new path
+      const parentDir = node.path.includes("/") ? node.path.replace(/[^/]+$/, "") : ""
+      onRenameFolder(node.path, parentDir + trimmed)
+    } else if (node.file && onRenameFile) {
+      // File rename: preserve directory prefix
+      const dir = node.path.includes("/") ? node.path.replace(/[^/]+$/, "") : ""
+      onRenameFile(node.file.id, dir + trimmed)
+    }
+    setRenaming(false)
+  }
+
   return (
     <div className="koen-tree-node">
       <div
-        className={`koen-tree-row ${node.isDir ? "dir" : "file"} ${isActive ? "active" : ""}`}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        className={`koen-tree-row ${node.isDir ? "dir" : "file"} ${isActive || contextMenu ? "active" : ""}`}
+        style={{ paddingLeft: `${depth * 12 + 8}px` }}
         onClick={handleClick}
+        onContextMenu={handleContextMenu}
       >
         {node.isDir ? <ChevronIcon open={isOpen} /> : <FileIcon />}
-        <span className="koen-tree-label">{node.name}</span>
+        {renaming ? (
+          <input
+            autoFocus
+            className="koen-tree-rename-input"
+            defaultValue={node.name}
+            onKeyDown={e => {
+              if (e.key === "Enter") handleRenameSubmit((e.target as HTMLInputElement).value)
+              else if (e.key === "Escape") setRenaming(false)
+            }}
+            onBlur={e => handleRenameSubmit(e.target.value)}
+            onClick={e => e.stopPropagation()}
+          />
+        ) : (
+          <span className="koen-tree-label">{node.name}</span>
+        )}
       </div>
+      {contextMenu && (
+        <div ref={menuRef} className="koen-tree-context-menu" style={{ top: contextMenu.y, left: contextMenu.x }}>
+          {node.isDir && onCreateFile && (
+            <button onClick={() => { setContextMenu(null); onCreateFile(node.path) }}>New File</button>
+          )}
+          {node.isDir && onCreateFolder && (
+            <button onClick={() => { setContextMenu(null); onCreateFolder(node.path) }}>New Folder</button>
+          )}
+          {node.isDir && onRenameFolder && (
+            <button onClick={() => { setContextMenu(null); setRenaming(true) }}>Rename</button>
+          )}
+          {!node.isDir && onRenameFile && (
+            <button onClick={() => { setContextMenu(null); setRenaming(true) }}>Rename</button>
+          )}
+          {!node.isDir && onDeleteFile && node.file && (
+            <button onClick={() => { setContextMenu(null); onDeleteFile(node.file!.id) }}>Delete</button>
+          )}
+        </div>
+      )}
       {node.isDir && isOpen && (
         <div className="koen-tree-children">
           {node.children.map(child => (
@@ -140,6 +237,11 @@ function TreeItem({
               depth={depth + 1}
               activePath={activePath}
               onFileSelect={onFileSelect}
+              onRenameFile={onRenameFile}
+              onDeleteFile={onDeleteFile}
+              onCreateFile={onCreateFile}
+              onCreateFolder={onCreateFolder}
+              onRenameFolder={onRenameFolder}
             />
           ))}
         </div>
@@ -150,44 +252,29 @@ function TreeItem({
 
 // ─── FileTree component ─────────────────────────────────────
 
-export default function FileTree({ files, activePath, title, rootName, onFileSelect }: FileTreeProps) {
-  const tree = buildTree(files)
-  const rootOpen = useFileTreeStore((s) => s.expanded.has("__root__"))
-  const toggle = useFileTreeStore((s) => s.toggle)
+export default function FileTree({ files, folders, activePath, title, indent = 0, onFileSelect, onRenameFile, onDeleteFile, onCreateFile, onCreateFolder, onRenameFolder }: FileTreeProps) {
+  const tree = buildTree(files, folders)
 
   const treeItems = tree.map(node => (
     <TreeItem
       key={node.path}
       node={node}
-      depth={rootName ? 1 : 0}
+      depth={indent}
       activePath={activePath}
       onFileSelect={onFileSelect}
+      onRenameFile={onRenameFile}
+      onDeleteFile={onDeleteFile}
+      onCreateFile={onCreateFile}
+      onCreateFolder={onCreateFolder}
+      onRenameFolder={onRenameFolder}
     />
   ))
 
   return (
     <div className="koen-file-tree">
-      {title && !rootName && <div className="koen-tree-title">{title}</div>}
+      {title && <div className="koen-tree-title">{title}</div>}
       <div className="koen-tree-list">
-        {rootName ? (
-          <div className="koen-tree-node">
-            <div
-              className="koen-tree-row dir koen-tree-root"
-              style={{ paddingLeft: "8px" }}
-              onClick={() => toggle("__root__")}
-            >
-              <ChevronIcon open={rootOpen} />
-              <span className="koen-tree-label">{rootName}</span>
-            </div>
-            {rootOpen && (
-              <div className="koen-tree-children">
-                {treeItems}
-              </div>
-            )}
-          </div>
-        ) : (
-          treeItems
-        )}
+        {treeItems}
       </div>
     </div>
   )

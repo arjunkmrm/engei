@@ -7,14 +7,14 @@
  * For lower-level control, use Editor + FileTree directly.
  */
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Editor from "./Editor"
 import FileTree from "./tree/FileTree"
 import { useFileTreeStore } from "./tree/store"
 import { getDefaultWidgets } from "engei-widgets"
 import type { Anchor, Comment } from "./types"
 import type { TreeFile } from "./tree/FileTree"
-import type { WorkspaceProps, WorkspaceFile, WorkspaceEventType } from "./workspace-types"
+import type { WorkspaceProps, WorkspaceFile, WorkspaceEventType, WorkspaceSwitcherConfig } from "./workspace-types"
 
 const defaultWidgets = getDefaultWidgets()
 
@@ -46,6 +46,19 @@ const CheckIcon = () => (
   </svg>
 )
 
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+)
+
+const FolderPlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 10v6" /><path d="M9 13h6" />
+    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+  </svg>
+)
+
 const CollapseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="m7 20 5-5 5 5" /><path d="m7 4 5 5 5-5" />
@@ -66,8 +79,95 @@ const MenuIcon = () => (
 
 // ─── Component ──────────────────────────────────────────────
 
+// ─── Dialog ─────────────────────────────────────────────────
+
+function Dialog({ title, onClose, children }: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [onClose])
+
+  return (
+    <div className="engei-dialog-backdrop" onMouseDown={onClose}>
+      <div className="engei-dialog" onMouseDown={e => e.stopPropagation()}>
+        <div className="engei-dialog-title">{title}</div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ─── Workspace Switcher ──────────────────────────────────────
+
+function WorkspaceSwitcher({ items, activeId, onSwitch, onCreate, onRequestCreate }: WorkspaceSwitcherConfig & { onRequestCreate?: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  const activeName = items.find(ws => ws.id === activeId)?.name ?? "Workspace"
+
+  return (
+    <div className="engei-workspace-switcher" ref={ref} style={{ position: "relative" }}>
+      <button
+        className="engei-ws-trigger"
+        onClick={() => setOpen(!open)}
+      >
+        <span className="koen-tree-label">{activeName}</span>
+        <svg className={`engei-ws-chevron ${open ? "open" : ""}`} width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M3 5l3 3 3-3" />
+        </svg>
+      </button>
+      {open && (
+        <div className="engei-ws-popover">
+          {items.map(ws => (
+            <button
+              key={ws.id}
+              className={`engei-ws-item ${ws.id === activeId ? "active" : ""}`}
+              onClick={() => { onSwitch(ws.id); setOpen(false) }}
+            >
+              {ws.name}
+              {ws.id === activeId && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              )}
+            </button>
+          ))}
+          {onCreate && (
+            <>
+              <div className="engei-ws-divider" />
+              <button className="engei-ws-item create" onClick={() => { setOpen(false); onRequestCreate?.() }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                New workspace
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Component ──────────────────────────────────────────────
+
 export default function Workspace({
   files,
+  folders,
   title,
   readOnly = false,
   commentsLocked = false,
@@ -78,14 +178,24 @@ export default function Workspace({
   theme: controlledTheme,
   onThemeChange,
   headerExtra,
+  sidebarExtra,
   emptyState,
   rootName = "workspace",
   markdownMode = "preview",
   widgets = defaultWidgets,
+  saveMode = "auto",
+  workspaces,
+  onCreateFile,
+  onCreateFolder,
+  onRenameFolder,
+  onRenameFile,
+  onDeleteFile,
 }: WorkspaceProps) {
   const [internalFiles, setInternalFiles] = useState<WorkspaceFile[]>(files)
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 640 : true)
   const [copied, setCopied] = useState(false)
+  const [showCreateWs, setShowCreateWs] = useState(false)
+  const [newWsName, setNewWsName] = useState("")
 
   // Use controlled theme or internal
   const [internalTheme, setInternalTheme] = useState<"dark" | "light">(controlledTheme || "dark")
@@ -276,12 +386,32 @@ export default function Workspace({
   }, [file, data])
 
   const handleContentChange = useCallback(async (content: string) => {
-    if (!file || !data.updateFile) return
+    if (!file) return
+    // Always update client state
     setInternalFiles(prev =>
       prev.map(f => f.id === file.id ? { ...f, content } : f)
     )
-    await data.updateFile(file.id, content)
-  }, [file, data])
+    // Only persist on keystroke in auto mode
+    if (saveMode === "auto" && data.updateFile) {
+      await data.updateFile(file.id, content)
+    }
+  }, [file, data, saveMode])
+
+  // Cmd/Ctrl+S saves in manual mode
+  useEffect(() => {
+    if (saveMode !== "manual") return
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault()
+        const current = internalFiles.find(f => f.path === activePath)
+        if (current && data.updateFile) {
+          data.updateFile(current.id, current.content)
+        }
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [saveMode, activePath, internalFiles, data])
 
   const handleLinkClick = useCallback((href: string) => {
     const dir = activePath?.includes("/") ? activePath.replace(/\/[^/]+$/, "/") : ""
@@ -316,8 +446,19 @@ export default function Workspace({
     <div className={`engei-workspace${!sidebarOpen ? " sidebar-collapsed" : ""}`}>
       <div className={`workspace-backdrop ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
       <div className={`workspace-sidebar ${sidebarOpen ? "open" : ""}`}>
+        {sidebarExtra}
         <div className="sidebar-header">
           <div className="header-spacer" />
+          {onCreateFile && (
+            <button className="sidebar-action" onClick={() => onCreateFile()} title="New file">
+              <PlusIcon />
+            </button>
+          )}
+          {onCreateFolder && (
+            <button className="sidebar-action" onClick={() => onCreateFolder()} title="New folder">
+              <FolderPlusIcon />
+            </button>
+          )}
           <button className="sidebar-action" onClick={() => useFileTreeStore.getState().collapseAll()} title="Collapse all folders">
             <CollapseIcon />
           </button>
@@ -325,15 +466,54 @@ export default function Workspace({
             <SidebarCloseIcon />
           </button>
         </div>
+        {workspaces && <WorkspaceSwitcher {...workspaces} onRequestCreate={() => setShowCreateWs(true)} />}
         <FileTree
           files={treeFiles}
+          folders={folders}
           activePath={activePath}
-          rootName={rootName}
           theme={theme}
+          indent={workspaces ? 1 : 0}
           onFileSelect={handleFileSelect}
+          onRenameFile={onRenameFile}
+          onDeleteFile={onDeleteFile}
+          onCreateFile={onCreateFile}
+          onCreateFolder={onCreateFolder}
+          onRenameFolder={onRenameFolder}
         />
       </div>
-      <div className="workspace-main">
+      <div className="workspace-main" style={{ position: "relative" }}>
+        {showCreateWs && workspaces?.onCreate && (
+          <Dialog title="New workspace" onClose={() => { setShowCreateWs(false); setNewWsName("") }}>
+            <div className="engei-dialog-description">Create a workspace to organize your files separately.</div>
+            <label className="engei-dialog-label">Name</label>
+            <input
+              autoFocus
+              className="engei-dialog-input"
+              placeholder="e.g. Work, Personal, Research"
+              value={newWsName}
+              onChange={e => setNewWsName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && newWsName.trim()) {
+                  workspaces.onCreate!(newWsName.trim())
+                  setNewWsName("")
+                  setShowCreateWs(false)
+                }
+              }}
+            />
+            <div className="engei-dialog-actions">
+              <button className="engei-dialog-btn" onClick={() => { setShowCreateWs(false); setNewWsName("") }}>Cancel</button>
+              <button
+                className="engei-dialog-btn primary"
+                disabled={!newWsName.trim()}
+                onClick={() => {
+                  workspaces.onCreate!(newWsName.trim())
+                  setNewWsName("")
+                  setShowCreateWs(false)
+                }}
+              >Create</button>
+            </div>
+          </Dialog>
+        )}
         <header className="workspace-header">
           <button className={`sidebar-toggle ${sidebarOpen ? "hidden" : ""}`} onClick={() => setSidebarOpen(true)}>
             <MenuIcon />

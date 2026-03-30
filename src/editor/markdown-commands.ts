@@ -306,6 +306,53 @@ function smartShiftTab(view: EditorView): boolean {
   return true
 }
 
+// ─── Typographic replacements ────────────────────────────────
+
+const REPLACEMENTS: [string, string][] = [
+  ["->", "→"],
+  ["<-", "←"],
+  ["=>", "⇒"],
+  ["--", "—"],
+  ["...", "…"],
+]
+
+/** Replace typographic sequences as the user types. */
+export const typographicReplacements = EditorView.updateListener.of((update) => {
+  if (!update.docChanged) return
+  // Only check user input (not programmatic changes)
+  update.changes.iterChanges((_fromA, _toA, _fromB, toB, inserted) => {
+    if (inserted.length === 0) return
+    const insertedText = inserted.toString()
+    // Only trigger on single-char inserts (typing)
+    if (insertedText.length !== 1) return
+
+    const doc = update.state.doc
+    for (const [trigger, replacement] of REPLACEMENTS) {
+      const lastChar = trigger[trigger.length - 1]
+      if (insertedText !== lastChar) continue
+
+      // Check if the characters before the cursor match the trigger prefix
+      const triggerStart = toB - trigger.length
+      if (triggerStart < 0) continue
+      const candidate = doc.sliceString(triggerStart, toB)
+      if (candidate !== trigger) continue
+
+      // Don't replace inside code blocks or inline code
+      // (simple heuristic: check if we're inside backticks)
+      const lineBefore = doc.sliceString(doc.lineAt(toB).from, triggerStart)
+      if ((lineBefore.split("`").length - 1) % 2 === 1) continue
+
+      // Schedule replacement (can't dispatch during update listener synchronously)
+      setTimeout(() => {
+        update.view.dispatch({
+          changes: { from: triggerStart, to: toB, insert: replacement },
+        })
+      }, 0)
+      return
+    }
+  })
+})
+
 // ─── Keymap ───────────────────────────────────────────────────
 
 export const markdownKeymap: KeyBinding[] = [
