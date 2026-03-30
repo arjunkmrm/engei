@@ -63,6 +63,8 @@ export interface EditorProps {
   /** Internal link clicked (non-http, non-anchor) */
   onLinkClick?: (href: string) => void
 
+  /** Slash command handler: user types /prompt, presses Enter → this is called with (prompt, context) → returns markdown to insert */
+  onSlashCommand?: (prompt: string, context: string) => Promise<string>
   /** Widget plugins for markdown preview. Defaults to built-in chart, mermaid, diff. */
   widgets?: WidgetPlugin[]
 }

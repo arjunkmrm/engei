@@ -182,6 +182,7 @@ export default function Workspace({
   emptyState,
   rootName = "workspace",
   markdownMode = "preview",
+  onSlashCommand,
   widgets = defaultWidgets,
   saveMode = "auto",
   workspaces,
@@ -559,6 +560,7 @@ export default function Workspace({
               mode={/\.(md|mdx)$/i.test(file.path) ? markdownMode : "source"}
               theme={theme}
               widgets={widgets}
+              onSlashCommand={onSlashCommand}
               onChange={!readOnly ? handleContentChange : undefined}
               onCreateComment={handleCreateComment}
               onUpdateComment={handleUpdateComment}

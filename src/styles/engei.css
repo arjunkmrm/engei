@@ -325,6 +325,25 @@
   min-height: 200px;
 }
 
+/* ─── Slash commands ─────────────────────────────────────── */
+
+.cm-slash-line {
+  background: var(--editor-line-highlight, rgba(255, 255, 255, 0.03));
+  border-radius: 4px;
+}
+
+.cm-slash-placeholder {
+  color: var(--editor-line-number, #4a4540);
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+  padding-left: 4px;
+}
+
+.cm-slash-typing .cm-line {
+  color: var(--accent, #C15F3C);
+}
+
 /* ─── Comment highlight (code mode) ──────────────────────── */
 
 .cm-comment-highlight {

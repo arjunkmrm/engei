@@ -35,6 +35,7 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
   theme = "dark",
   className = "",
   onChange,
+  onSlashCommand,
   onCreateComment,
   onUpdateComment,
   onDeleteComment,
@@ -123,6 +124,7 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
               comments={comments}
               liveMode={isLive}
               widgets={isLive ? widgets : undefined}
+              onSlashCommand={onSlashCommand}
               onChange={onChange}
               onViewReady={setView}
               onViewDestroy={() => setView(null)}

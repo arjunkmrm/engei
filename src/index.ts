@@ -47,5 +47,9 @@ export type { WidgetSpec, WidgetHydrator } from "engei-widgets"
 // Live editing extensions (composable CM6 extensions)
 export { liveDefaults, headings, emphasis, strikethrough, tables, codeBlocks, images, widgetExtension, blockquotes, tasks, horizontalRules, listIndent, selectionOverlaps, cursorOnLine } from "./editor/live"
 
+// Slash commands
+export { slashCommands, slashCommandHandler } from "./editor/slash-commands"
+export type { SlashCommandHandler } from "./editor/slash-commands"
+
 // Styles — import "engei/styles" in your app
 import "./styles/engei.css"

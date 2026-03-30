@@ -13,6 +13,7 @@ import { indentUnit } from "@codemirror/language"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
 import { markdownKeymap, typographicReplacements } from "./markdown-commands"
+import { slashCommands, slashCommandHandler, type SlashCommandHandler } from "./slash-commands"
 import { commentField, setComments } from "../comments/CommentDecoration"
 import { resolveAnchor } from "../comments/anchoring"
 import { liveDefaults } from "./live"
@@ -27,6 +28,7 @@ interface Props {
   comments: Comment[]
   liveMode?: boolean
   widgets?: WidgetPlugin[]
+  onSlashCommand?: SlashCommandHandler
   onChange?: (content: string) => void
   onViewReady?: (view: EditorView) => void
   onViewDestroy?: () => void
@@ -40,6 +42,7 @@ export default function CodeMirrorEditor({
   comments,
   liveMode = false,
   widgets,
+  onSlashCommand,
   onChange,
   onViewReady,
   onViewDestroy,
@@ -75,6 +78,7 @@ export default function CodeMirrorEditor({
       readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
       ...(liveMode ? liveDefaults({ widgets, theme: isDark ? "dark" : "light" }) : []),
       typographicReplacements,
+      ...(onSlashCommand ? [slashCommands(), slashCommandHandler.of(onSlashCommand)] : []),
       EditorView.updateListener.of(update => {
         if (update.docChanged && !suppressChangeRef.current) {
           onChangeRef.current?.(update.state.doc.toString())

@@ -82,6 +82,8 @@ export interface WorkspaceProps {
   emptyState?: React.ReactNode
   /** Root name in breadcrumb (e.g. folder slug) */
   rootName?: string
+  /** Slash command handler: /prompt → LLM → widget markdown */
+  onSlashCommand?: (prompt: string, context: string) => Promise<string>
   /** Widget plugins for markdown preview */
   widgets?: WidgetPlugin[]
   /** Default mode for markdown files: "preview" (read-only), "live" (WYSIWYG), "source" (raw) */
