@@ -55,6 +55,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "0.0.3",
+    "loading-games": "file:../loading-games",
     "@cloudflare/workerd-darwin-arm64": "^1.20260317.1",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/commands": "^6.8.0",
@@ -66,7 +67,7 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-rust": "^6.0.2",
     "@codemirror/language": "^6.12.1",
-    "@codemirror/view": "file:../forks/cm-view-pretext",
+    "@codemirror/view": "npm:pretext-codemirror-view@6.40.0-pretext.1",
     "@lezer/highlight": "^1.2.3",
     "boring-avatars": "^2.0.4",
     "codemirror": "^6.0.2",
@@ -92,5 +93,8 @@
     "vite-plugin-dts": "^4.5.0",
     "vitest": "^4.0.18",
     "wrangler": "^4.75.0"
+  },
+  "overrides": {
+    "@codemirror/view": "npm:pretext-codemirror-view@6.40.0-pretext.1"
   }
 }

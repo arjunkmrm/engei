@@ -8,7 +8,7 @@
 import { Decoration, EditorView, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view"
 import type { DecorationSet } from "@codemirror/view"
 import { Facet, StateField, StateEffect, type Extension, type Range } from "@codemirror/state"
-import { randomGame } from "./loading-games"
+import { randomGameWidget } from "./loading-games"
 
 // ─── Facet for the callback ────────────────────────────────
 
@@ -102,7 +102,7 @@ export function slashEnter(view: EditorView): boolean {
   const lineFrom = line.from
 
   // Pick a random game and start loading
-  view.dispatch({ effects: setLoading.of({ lineFrom, game: randomGame() }) })
+  view.dispatch({ effects: setLoading.of({ lineFrom, game: randomGameWidget() }) })
 
   handler(prompt, context).then((markdown) => {
     const currentLine = view.state.doc.lineAt(lineFrom)
