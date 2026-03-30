@@ -7,8 +7,9 @@
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, basicSetup } from "codemirror"
 import { keymap } from "@codemirror/view"
-import { indentWithTab } from "@codemirror/commands"
+// indentWithTab replaced by smartTab/smartShiftTab in markdownKeymap
 import { EditorState, Compartment, Prec } from "@codemirror/state"
+import { indentUnit } from "@codemirror/language"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
 import { markdownKeymap } from "./markdown-commands"
@@ -63,13 +64,14 @@ export default function CodeMirrorEditor({
 
     const extensions = [
       basicSetup,
-      Prec.high(keymap.of([indentWithTab, ...markdownKeymap])),
+      indentUnit.of("    "),
+      Prec.high(keymap.of(markdownKeymap)),
       themeComp.current.of(buildSonoTheme(isDark)),
       syntaxComp.current.of(getSyntaxHighlighting(isDark)),
       EditorView.lineWrapping,
       EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off", autocapitalize: "off" }),
       langComp.current.of(getLanguage(filename)),
-      commentField,
+      ...(liveMode ? [] : [commentField]),
       readOnlyComp.current.of(EditorState.readOnly.of(readOnly)),
       ...(liveMode ? liveDefaults({ widgets, theme: isDark ? "dark" : "light" }) : []),
       EditorView.updateListener.of(update => {
@@ -136,8 +138,9 @@ export default function CodeMirrorEditor({
     suppressChangeRef.current = false
   }, [content])
 
-  // Sync comments -> CM6 decorations
+  // Sync comments -> CM6 decorations (source mode only)
   const syncComments = useCallback(() => {
+    if (liveMode) return
     const view = viewRef.current
     if (!view) return
     const doc = view.state.doc.toString()
@@ -149,7 +152,7 @@ export default function CodeMirrorEditor({
       .filter((r): r is { id: string; from: number; to: number } => r !== null)
 
     view.dispatch({ effects: setComments.of(resolved) })
-  }, [comments])
+  }, [comments, liveMode])
 
   useEffect(() => {
     syncComments()

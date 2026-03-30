@@ -146,13 +146,93 @@ export function smartEnter(view: EditorView): boolean {
   if (listItemNode) {
     const mark = listItemNode.getChild("ListMark")
     if (mark) {
-      // Check if the current line is a continuation (no ListMark on this line)
       const cursorLine = state.doc.lineAt(head)
       const markLine = state.doc.lineAt(mark.from)
 
+      // Check if this is an empty list item OR cursor is at the very start of content
+      if (cursorLine.number === markLine.number) {
+        const textAfterMark = state.doc.sliceString(mark.to, cursorLine.to).trim()
+        const textBeforeCursor = state.doc.sliceString(mark.to, head).trim()
+        const isEmpty = textAfterMark === ""
+        const isAtContentStart = textBeforeCursor === "" && textAfterMark !== ""
+
+        if (isEmpty || isAtContentStart) {
+          // Empty or cursor-at-start — check if nested
+          const listNode = listItemNode.parent
+          const isNested = listNode?.parent?.name === "ListItem"
+
+          if (isNested) {
+            // Outdent: delete the current line, place cursor at the end of the
+            // previous line, then call indentLess-style behavior by creating a
+            // new list item at the parent level
+            const parentListItem = listNode!.parent!
+            const parentMark = parentListItem.getChild("ListMark")
+            if (parentMark) {
+              const parentMarkLine = state.doc.lineAt(parentMark.from)
+              const parentWs = parentMarkLine.text.match(/^(\s*)/)?.[1] ?? ""
+
+              // Determine marker type from parent
+              const parentMarkText = state.doc.sliceString(parentMark.from, parentMark.to)
+              const isOrdered = /\d+\./.test(parentMarkText)
+
+              // Replace current line with outdented new item
+              // Use "1." initially — we'll fix the number after dispatch
+              // If cursor is at content start, carry the content along
+              const newMark = isOrdered ? "1." : parentMarkText
+              const trailingContent = isAtContentStart ? state.doc.sliceString(head, cursorLine.to) : ""
+              const insert = parentWs + newMark + " " + trailingContent
+              view.dispatch({
+                changes: { from: cursorLine.from, to: cursorLine.to, insert },
+                selection: { anchor: cursorLine.from + parentWs.length + newMark.length + 1 },
+              })
+
+              // Now renumber: count preceding siblings at this indent level
+              if (isOrdered) {
+                const newLine = view.state.doc.lineAt(view.state.selection.main.head)
+                const match = newLine.text.match(/^(\s*)\d+(\.\s)/)
+                if (match) {
+                  const indent = match[1]
+                  let count = 0
+                  for (let ln = newLine.number - 1; ln >= 1; ln--) {
+                    const prev = view.state.doc.line(ln)
+                    const pm = prev.text.match(/^(\s*)\d+\.\s/)
+                    if (pm && pm[1] === indent) {
+                      count++
+                    } else if (prev.text.trimStart().startsWith("-") || prev.text.trimStart().startsWith("*")) {
+                      break
+                    } else if (prev.text.trim() === "" || prev.text.match(/^\s+/)?.[0]?.length! > indent.length) {
+                      continue // skip blank lines and more-indented lines
+                    } else {
+                      break
+                    }
+                  }
+                  const newNum = String(count + 1)
+                  const numStart = newLine.from + indent.length
+                  const numEnd = numStart + match[0].length - indent.length - match[2].length
+                  if (view.state.doc.sliceString(numStart, numEnd) !== newNum) {
+                    view.dispatch({
+                      changes: { from: numStart, to: numEnd, insert: newNum },
+                    })
+                  }
+                }
+              }
+              return true
+            }
+          } else if (isEmpty || isAtContentStart) {
+            // Top-level — exit list: strip the marker, keep any content
+            const content = isAtContentStart ? state.doc.sliceString(head, cursorLine.to) : ""
+            view.dispatch({
+              changes: { from: cursorLine.from, to: cursorLine.to, insert: content },
+              selection: { anchor: cursorLine.from },
+            })
+            return true
+          }
+        }
+      }
+
+      // Check if the current line is a continuation (no ListMark on this line)
       if (cursorLine.number !== markLine.number) {
         // We're on a continuation line — create a new sibling list item.
-        // Use the same leading whitespace and marker as the parent ListItem.
         const markLineText = markLine.text
         const leadingWs = markLineText.match(/^(\s*)/)?.[1] ?? ""
         const markText = state.doc.sliceString(mark.from, mark.to)
@@ -162,6 +242,10 @@ export function smartEnter(view: EditorView): boolean {
           changes: { from: head, insert },
           selection: { anchor: head + insert.length },
         })
+        // Renumber if ordered
+        if (/\d+\./.test(markText)) {
+          renumberOrderedItem(view)
+        }
         return true
       }
     }
@@ -171,9 +255,62 @@ export function smartEnter(view: EditorView): boolean {
   return insertNewlineContinueMarkup(view)
 }
 
+// ─── Smart Tab (reset ordered list number on indent) ─────────
+
+import { indentMore, indentLess } from "@codemirror/commands"
+
+/**
+ * Renumber an ordered list item to match its position among siblings.
+ * Counts preceding ordered list items at the same indent level.
+ */
+function renumberOrderedItem(view: EditorView): void {
+  const line = view.state.doc.lineAt(view.state.selection.main.head)
+  const match = line.text.match(/^(\s*)\d+(\.\s)/)
+  if (!match) return
+
+  const indent = match[1]
+  let count = 0
+
+  for (let ln = line.number - 1; ln >= 1; ln--) {
+    const prev = view.state.doc.line(ln)
+    const pm = prev.text.match(/^(\s*)\d+\.\s/)
+    if (pm && pm[1] === indent) {
+      count++
+    } else if (prev.text.trim() === "" || (prev.text.match(/^\s*/)?.[0]?.length ?? 0) > indent.length) {
+      continue // skip blank lines and more-indented lines (nested content)
+    } else {
+      break
+    }
+  }
+
+  const newNum = String(count + 1)
+  const numStart = line.from + indent.length
+  const numEnd = numStart + match[0].length - indent.length - match[2].length
+  if (view.state.doc.sliceString(numStart, numEnd) !== newNum) {
+    view.dispatch({
+      changes: { from: numStart, to: numEnd, insert: newNum },
+    })
+  }
+}
+
+function smartTab(view: EditorView): boolean {
+  const result = indentMore(view)
+  if (result) renumberOrderedItem(view)
+  return result
+}
+
+function smartShiftTab(view: EditorView): boolean {
+  const result = indentLess(view)
+  if (!result) return false
+  renumberOrderedItem(view)
+  return true
+}
+
 // ─── Keymap ───────────────────────────────────────────────────
 
 export const markdownKeymap: KeyBinding[] = [
+  { key: "Tab", run: smartTab },
+  { key: "Shift-Tab", run: smartShiftTab },
   { key: "Enter", run: smartEnter },
   { key: "Shift-Enter", run: insertSoftNewline },
   { key: "Backspace", run: deleteMarkupBackward },
