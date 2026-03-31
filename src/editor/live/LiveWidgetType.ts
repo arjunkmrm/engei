@@ -12,7 +12,10 @@
  */
 
 import { WidgetType, EditorView } from "@codemirror/view"
+import { syntaxTree } from "@codemirror/language"
 import type { WidgetPlugin, WidgetSpec } from "engei-widgets"
+import { addExpandButton } from "engei-widgets"
+import { widgetSaveBack } from "./extensions/widgets"
 
 // ─── Spec cache ─────────────────────────────────────────────
 // Cache parsed specs so we don't re-parse on every decoration rebuild
@@ -78,6 +81,37 @@ export class LiveWidgetType extends WidgetType {
       && this.theme === other.theme
   }
 
+  /** Build an onUpdate callback that writes new spec JSON back into the code block. */
+  private makeOnUpdate(view: EditorView): (newSpec: Record<string, any>) => void {
+    const position = this.position
+    return (newSpec: Record<string, any>) => {
+      const state = view.state
+      let codeFrom = -1, codeTo = -1
+      syntaxTree(state).iterate({
+        from: position,
+        to: position + 1,
+        enter(node) {
+          if (node.name === "FencedCode") {
+            const codeText = node.node.getChild("CodeText")
+            if (codeText) {
+              codeFrom = codeText.from
+              codeTo = codeText.to
+            }
+            return false
+          }
+        },
+      })
+      if (codeFrom === -1) return
+      // Strip widgetId and type — those are added on read by getSpec()
+      const { widgetId, type, ...rest } = newSpec
+      const json = JSON.stringify(rest, null, 2)
+      view.dispatch({
+        changes: { from: codeFrom, to: codeTo, insert: json },
+        annotations: widgetSaveBack.of(true),
+      })
+    }
+  }
+
   toDOM(view: EditorView): HTMLElement {
     const cacheKey = `${this.plugin.type}:${this.codeHash}:${this.theme}`
 
@@ -101,11 +135,14 @@ export class LiveWidgetType extends WidgetType {
     }
 
     // Defer hydration — don't block LCP with CDN script loads
+    const onUpdate = this.makeOnUpdate(view)
     const hydrate = () => {
-      const result = this.plugin.hydrate(container, spec, this.theme)
+      const result = this.plugin.hydrate(container, spec, this.theme, onUpdate)
       const cleanup = typeof result === "function" ? result : undefined
-      this.cleanup = cleanup || null
-      domCache.set(cacheKey, { el: container, cleanup })
+      const expandCleanup = addExpandButton(container, spec, this.plugin.hydrate, this.theme)
+      const combined = () => { cleanup?.(); expandCleanup() }
+      this.cleanup = combined
+      domCache.set(cacheKey, { el: container, cleanup: combined })
       requestAnimationFrame(() => view.requestMeasure())
     }
 
@@ -130,7 +167,7 @@ export class LiveWidgetType extends WidgetType {
     const spec = getSpec(this.plugin, this.code, this.position)
     if (!spec) return false
 
-    const result = this.plugin.hydrate(dom, spec, this.theme)
+    const result = this.plugin.hydrate(dom, spec, this.theme, this.makeOnUpdate(view))
     if (typeof result === "function") {
       this.cleanup = result
     }
