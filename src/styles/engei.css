@@ -333,6 +333,8 @@
   width: fit-content;
   min-width: 200px;
   padding-right: 8px !important;
+  display: flex;
+  align-items: center;
 }
 
 .cm-slash-game {

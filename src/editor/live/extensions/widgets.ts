@@ -1,9 +1,12 @@
 import { syntaxTree } from "@codemirror/language"
 import { Decoration, EditorView } from "@codemirror/view"
-import { StateField, type Extension, type Range, type EditorState } from "@codemirror/state"
+import { Annotation, StateField, type Extension, type Range, type EditorState } from "@codemirror/state"
 import type { DecorationSet } from "@codemirror/view"
 import type { WidgetPlugin } from "engei-widgets"
 import { LiveWidgetType } from "../LiveWidgetType"
+
+/** Annotation to tag save-back transactions from widgets, so we skip rebuilding decorations. */
+export const widgetSaveBack = Annotation.define<boolean>()
 
 function buildWidgetDecos(
   state: EditorState,
@@ -55,6 +58,8 @@ export function widgets(plugins: WidgetPlugin[], opts?: {
       return buildWidgetDecos(state, widgetLangs, theme)
     },
     update(prev, tr) {
+      // Save-back from a widget — adjust positions but don't rebuild (prevents feedback loop)
+      if (tr.annotation(widgetSaveBack)) return prev.map(tr.changes)
       if (!tr.docChanged) {
         const oldTree = syntaxTree(tr.startState)
         const newTree = syntaxTree(tr.state)

@@ -196,6 +196,18 @@ export default function Workspace({
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 640 : true)
   const [markdownMode, setMarkdownMode] = useState<"source" | "preview" | "live">(initialMarkdownMode)
   const [copied, setCopied] = useState(false)
+
+  // Cmd+1/2/3 to switch mode
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      if (e.key === "1") { e.preventDefault(); setMarkdownMode("source") }
+      else if (e.key === "2") { e.preventDefault(); setMarkdownMode("live") }
+      else if (e.key === "3") { e.preventDefault(); setMarkdownMode("preview") }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [])
   const [showCreateWs, setShowCreateWs] = useState(false)
   const [newWsName, setNewWsName] = useState("")
 

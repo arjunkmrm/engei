@@ -23,11 +23,4 @@ export default defineConfig({
     },
   ],
   root: __dirname,
-  resolve: {
-    alias: {
-      // Force fork of @codemirror/view and single instance of @codemirror/state
-      "@codemirror/view": path.resolve(__dirname, "../node_modules/@codemirror/view/dist/index.js"),
-      "@codemirror/state": path.resolve(__dirname, "../node_modules/@codemirror/state/dist/index.js"),
-    },
-  },
 })

@@ -173,7 +173,7 @@ describe("widget plugin lifecycle", () => {
 
   it("getDefaultWidgets returns all default widgets", () => {
     const defaults = getDefaultWidgets()
-    expect(defaults.map(d => d.type)).toEqual(["chart", "mermaid", "diff", "globe", "katex", "table", "embed", "excalidraw", "map", "timeline", "calendar", "html"])
+    expect(defaults.map(d => d.type)).toEqual(["chart", "mermaid", "katex", "table", "embed", "sketch", "map", "timeline", "calendar", "attachment", "diff", "html", "globe"])
   })
 })
 

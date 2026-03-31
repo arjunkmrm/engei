@@ -87,3 +87,51 @@
   width: 16px;
   text-align: center;
 }
+
+/* ─── Inline rename ──────────────────────────────────────── */
+
+.koen-tree-rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  margin: -2px 0;
+  background: var(--editor-bg, #1a1816);
+  color: var(--editor-fg, #e8e6e3);
+  border: 1px solid var(--widget-border-hover, #555);
+  border-radius: 3px;
+  font: inherit;
+  font-size: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ─── Context menu ───────────────────────────────────────── */
+
+.koen-tree-context-menu {
+  position: fixed;
+  z-index: 300;
+  background: var(--sidebar-bg, var(--editor-bg, #1a1816));
+  border: 1px solid var(--widget-border, #333);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 160px;
+}
+
+.koen-tree-context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--editor-fg, #e8e6e3);
+  font-size: 13px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.koen-tree-context-menu button:hover {
+  background: var(--hover-bg);
+}
