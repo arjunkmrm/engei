@@ -316,7 +316,8 @@
 }
 
 @media (max-width: 640px) {
-  .engei-workspace {
+  .engei-workspace,
+  .engei-workspace.sidebar-collapsed {
     grid-template-columns: 1fr;
   }
 
@@ -337,7 +338,7 @@
   }
 
   .workspace-backdrop {
-    display: block;
+    display: none;
     position: fixed;
     inset: 0;
     z-index: 99;
@@ -348,6 +349,7 @@
   }
 
   .workspace-backdrop.open {
+    display: block;
     opacity: 1;
     pointer-events: auto;
   }
