@@ -1,15 +1,15 @@
 {
   "name": "engei",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "React code editor with inline comments, markdown preview, and extensible widgets. Built on CodeMirror 6.",
   "type": "module",
   "license": "MIT",
   "author": "Smithery",
   "repository": {
     "type": "git",
-    "url": "https://github.com/smithery-ai/koen"
+    "url": "https://github.com/smithery-ai/engei"
   },
-  "homepage": "https://github.com/smithery-ai/koen",
+  "homepage": "https://github.com/smithery-ai/engei",
   "keywords": [
     "react",
     "code-editor",
