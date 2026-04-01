@@ -3,6 +3,8 @@ dist
 *.log
 .debug/
 .todos.txt
+.autobuild/
+.autoresearch/
 
 # wrangler files
 .wrangler
