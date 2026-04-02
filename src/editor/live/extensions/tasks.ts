@@ -37,12 +37,29 @@ function buildTaskDecos(
   return Decoration.set(widgets, true)
 }
 
+/** Find the TaskMarker node at or near a document position. */
+function findTaskMarkerAt(state: EditorState, pos: number): { from: number; to: number; checked: boolean } | null {
+  let result: { from: number; to: number; checked: boolean } | null = null
+  const line = state.doc.lineAt(pos)
+  syntaxTree(state).iterate({
+    from: line.from,
+    to: line.to,
+    enter(node) {
+      if (node.name === "TaskMarker") {
+        const text = state.doc.sliceString(node.from, node.to)
+        result = { from: node.from, to: node.to, checked: text.includes("x") || text.includes("X") }
+      }
+    },
+  })
+  return result
+}
+
 export function tasks(opts?: {
   markerClass?: string
 }): Extension {
   const marker = Decoration.mark({ class: opts?.markerClass ?? "cm-live-marker" })
 
-  return StateField.define<DecorationSet>({
+  const decoField = StateField.define<DecorationSet>({
     create(state) {
       return buildTaskDecos(state, marker)
     },
@@ -56,4 +73,21 @@ export function tasks(opts?: {
     },
     provide: f => EditorView.decorations.from(f),
   })
+
+  const clickHandler = EditorView.domEventHandlers({
+    mousedown(event, view) {
+      const target = event.target as HTMLElement
+      if (!target.classList.contains("cm-live-task-checked") && !target.classList.contains("cm-live-task-unchecked")) return false
+      const pos = view.posAtDOM(target)
+      const marker = findTaskMarkerAt(view.state, pos)
+      if (!marker) return false
+      event.preventDefault()
+      view.dispatch({
+        changes: { from: marker.from, to: marker.to, insert: marker.checked ? "[ ]" : "[x]" },
+      })
+      return true
+    },
+  })
+
+  return [decoField, clickHandler]
 }

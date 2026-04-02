@@ -14,7 +14,7 @@ import { createAnchor as createAnchorFn, resolveAnchor } from "../comments/ancho
 import { computePopoverPositions } from "../comments/popoverPositioning"
 import { resolveCollisions } from "../comments/resolveCollisions"
 import { applyHighlights } from "./usePreviewHighlights"
-import { hydrateWidgets, buildWidgetRegistry, buildLangMap, getDefaultWidgets } from "engei-widgets"
+import { hydrateWidgets, buildWidgetRegistry, buildLangMap, getDefaultWidgets } from "@engei/bonsai"
 import type { Comment, Anchor, WidgetPlugin } from "../types"
 import { COMMENT_COLORS, getTimeAgo } from "../utils"
 
@@ -29,6 +29,7 @@ interface Props {
   onDeleteComment?: (id: string) => void
   onAddReply: (commentId: string, body: string) => void
   onLinkClick?: (href: string) => void
+  onCheckboxToggle?: (from: number, to: number, checked: boolean) => void
 }
 
 export default function MarkdownPreview({
@@ -42,10 +43,13 @@ export default function MarkdownPreview({
   onDeleteComment,
   onAddReply,
   onLinkClick,
+  onCheckboxToggle,
 }: Props) {
   const contentRef = useRef<HTMLDivElement>(null)
   const lastHtmlRef = useRef<string>("")
   const lastThemeRef = useRef<string>("")
+  const onCheckboxToggleRef = useRef(onCheckboxToggle)
+  onCheckboxToggleRef.current = onCheckboxToggle
   const [commentPositions, setCommentPositions] = useState<{ commentId: string; top: number }[]>([])
   const [draftComment, setDraftComment] = useState<{ from: number; to: number; top: number } | null>(null)
   const [hoveredCommentId, setHoveredCommentId] = useState<string | null>(null)
@@ -122,9 +126,22 @@ export default function MarkdownPreview({
     if (htmlChanged) {
       el.innerHTML = html
 
-      // Enable checkboxes
+      // Enable checkboxes and wire toggle → source update
       el.querySelectorAll('input[type="checkbox"]').forEach((cb: Element) => {
-        (cb as HTMLInputElement).disabled = false
+        const input = cb as HTMLInputElement
+        input.disabled = false
+        input.addEventListener("change", () => {
+          const li = input.closest("li[data-src-start]")
+          if (!li) return
+          const from = parseInt(li.getAttribute("data-src-start")!, 10)
+          const to = parseInt(li.getAttribute("data-src-end")!, 10)
+          const slice = content.slice(from, to)
+          const markerMatch = slice.match(/\[([ xX])\]/)
+          if (!markerMatch) return
+          const markerOffset = from + markerMatch.index!
+          // markerOffset points to "[", +1 is the space/x, so the full marker is [from, from+3)
+          onCheckboxToggleRef.current?.(markerOffset, markerOffset + 3, input.checked)
+        })
       })
 
       // Add copy buttons to code blocks

@@ -85,6 +85,11 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
     onActiveCommentChange?.(id)
   }, [onActiveCommentChange])
 
+  const handleCheckboxToggle = useCallback((from: number, to: number, checked: boolean) => {
+    const updated = content.slice(0, from) + (checked ? "[x]" : "[ ]") + content.slice(to)
+    onChange?.(updated)
+  }, [content, onChange])
+
   // Live mode: use CodeMirror with markdown language + live editing decorations
   const isLive = mode === "live"
 
@@ -104,6 +109,7 @@ export default forwardRef<EditorHandle, EditorProps>(function Editor({
               onDeleteComment={onDeleteComment}
               onAddReply={(commentId, body) => onAddReply?.(commentId, body)}
               onLinkClick={onLinkClick}
+              onCheckboxToggle={handleCheckboxToggle}
             />
           </div>
         </Suspense>
