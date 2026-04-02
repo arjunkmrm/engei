@@ -192,16 +192,24 @@
   margin: 1.5em 0 !important;
 }
 
-/* Fenced code blocks — display:block fills the line width */
+/* Fenced code blocks — mark decoration for font family only; size/spacing on line decoration */
 .cm-live-fenced-code {
-  background: var(--code-block-bg);
-  padding: 12px 14px;
   font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-  font-size: 13px !important;
-  display: block;
-  border-radius: 4px;
-  line-height: 1.5 !important;
 }
+
+/* Line decoration on every code content line — gives empty lines the background.
+   line-height set here (not on the mark span) to actually control line box height. */
+.cm-line.cm-live-code-line {
+  background: var(--code-block-bg);
+  padding-left: 14px;
+  padding-right: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+/* First/last content lines get extra padding for breathing room + border-radius */
+.cm-line.cm-live-code-first { padding-top: 10px; border-radius: 4px 4px 0 0; }
+.cm-line.cm-live-code-last  { padding-bottom: 10px; border-radius: 0 0 4px 4px; }
+.cm-line.cm-live-code-first.cm-live-code-last { border-radius: 4px; }
 
 /* Collapse fence marker lines — 1px min height so CM6 heightmap stays valid */
 .cm-live-fence-line {

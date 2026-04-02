@@ -5,6 +5,10 @@ import type { DecorationSet } from "@codemirror/view"
 
 const fencedCodeMark = Decoration.mark({ class: "cm-live-fenced-code" })
 const fenceLineMark = Decoration.line({ class: "cm-live-fence-line" })
+const codeContentLine = Decoration.line({ class: "cm-live-code-line" })
+const codeFirstLine = Decoration.line({ class: "cm-live-code-line cm-live-code-first" })
+const codeLastLine = Decoration.line({ class: "cm-live-code-line cm-live-code-last" })
+const codeSingleLine = Decoration.line({ class: "cm-live-code-line cm-live-code-first cm-live-code-last" })
 
 function buildCodeBlockDecos(
   state: EditorState,
@@ -25,6 +29,12 @@ function buildCodeBlockDecos(
           }
         }
 
+        // Only decorate complete fenced code blocks (opening + closing fence).
+        // Incomplete blocks (user mid-typing) are left unstyled — auto-close
+        // on Enter creates the closing fence instantly.
+        // Skip incomplete blocks (no closing fence)
+        if (node.node.getChildren("CodeMark").length < 2) return false
+
         widgets.push(fencedCodeMark.range(node.from, node.to))
         const doc = state.doc
         const startLine = doc.lineAt(node.from)
@@ -32,6 +42,23 @@ function buildCodeBlockDecos(
         widgets.push(fenceLineMark.range(startLine.from))
         if (endLine.number !== startLine.number) {
           widgets.push(fenceLineMark.range(endLine.from))
+        }
+
+        // Add line decorations for all content lines (background on empty lines,
+        // plus first/last padding and border-radius)
+        const firstContentLineNum = startLine.number + 1
+        const lastContentLineNum = endLine.number - 1
+        for (let ln = firstContentLineNum; ln <= lastContentLineNum; ln++) {
+          const lineFrom = doc.line(ln).from
+          if (ln === firstContentLineNum && ln === lastContentLineNum) {
+            widgets.push(codeSingleLine.range(lineFrom))
+          } else if (ln === firstContentLineNum) {
+            widgets.push(codeFirstLine.range(lineFrom))
+          } else if (ln === lastContentLineNum) {
+            widgets.push(codeLastLine.range(lineFrom))
+          } else {
+            widgets.push(codeContentLine.range(lineFrom))
+          }
         }
 
         // Hide CodeInfo (language label)
@@ -61,9 +88,11 @@ export function codeBlocks(opts?: {
     },
     update(prev, tr) {
       if (!tr.docChanged) {
-        const oldTree = syntaxTree(tr.startState)
-        const newTree = syntaxTree(tr.state)
-        if (oldTree === newTree) return prev
+        if (syntaxTree(tr.startState) === syntaxTree(tr.state)) return prev
+      } else if (syntaxTree(tr.startState) === syntaxTree(tr.state)) {
+        // Doc changed but tree structure unchanged (e.g. typing inside a block) —
+        // map positions instead of full rebuild
+        return prev.map(tr.changes)
       }
       return buildCodeBlockDecos(tr.state, marker, widgetLangs)
     },

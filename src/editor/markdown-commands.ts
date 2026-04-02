@@ -354,12 +354,50 @@ export const typographicReplacements = EditorView.updateListener.of((update) => 
   })
 })
 
+// ─── Auto-close fenced code blocks ──────────────────────────
+
+/**
+ * When the user presses Enter at the end of a fence-opening line
+ * (e.g. ```js), auto-insert the closing fence and place the cursor
+ * inside the block.
+ */
+function autoCloseFence(view: EditorView): boolean {
+  const state = view.state
+  const { head } = state.selection.main
+
+  const line = state.doc.lineAt(head)
+  // Only trigger at end of line
+  if (head !== line.to) return false
+
+  const text = line.text
+  // Match opening fence: ``` optionally followed by a language tag
+  if (!/^`{3,}\s*\S*\s*$/.test(text)) return false
+
+  // Check the syntax tree: if this fence is already part of a complete
+  // FencedCode (two CodeMark children), don't auto-close
+  const tree = syntaxTree(state)
+  const node = tree.resolveInner(line.from, 1)
+  if (node.name === "FencedCode" || node.parent?.name === "FencedCode") {
+    const fenced = node.name === "FencedCode" ? node : node.parent!
+    if (fenced.getChildren("CodeMark").length >= 2) return false
+  }
+
+  const fence = text.match(/^(`{3,})/)?.[1] ?? "```"
+  const insert = "\n\n" + fence
+  view.dispatch({
+    changes: { from: head, insert },
+    selection: { anchor: head + 1 }, // cursor on the empty line between fences
+  })
+  return true
+}
+
 // ─── Keymap ───────────────────────────────────────────────────
 
 export const markdownKeymap: KeyBinding[] = [
   { key: "Tab", run: smartTab },
   { key: "Shift-Tab", run: smartShiftTab },
   { key: "Enter", run: slashEnter },
+  { key: "Enter", run: autoCloseFence },
   { key: "Enter", run: smartEnter },
   { key: "Shift-Enter", run: insertSoftNewline },
   { key: "Backspace", run: deleteMarkupBackward },
