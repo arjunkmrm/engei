@@ -21,6 +21,8 @@ export interface FileTreeProps {
   onCreateFile?: (folderPath: string) => void
   onCreateFolder?: (parentPath?: string) => void
   onRenameFolder?: (oldPath: string, newPath: string) => void
+  onDeleteFolder?: (path: string) => void
+  onMoveFile?: (fileId: string, newPath: string) => void
 }
 
 // ─── Tree building ──────────────────────────────────────────
@@ -122,6 +124,8 @@ function TreeItem({
   onCreateFile,
   onCreateFolder,
   onRenameFolder,
+  onDeleteFolder,
+  onMoveFile,
 }: {
   node: TreeNode
   depth: number
@@ -132,11 +136,14 @@ function TreeItem({
   onCreateFile?: (folderPath: string) => void
   onCreateFolder?: (parentPath?: string) => void
   onRenameFolder?: (oldPath: string, newPath: string) => void
+  onDeleteFolder?: (path: string) => void
+  onMoveFile?: (fileId: string, newPath: string) => void
 }) {
   const isOpen = useFileTreeStore((s) => s.expanded.has(node.path))
   const toggle = useFileTreeStore((s) => s.toggle)
   const isActive = !node.isDir && node.path === activePath
   const [renaming, setRenaming] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -161,7 +168,7 @@ function TreeItem({
 
   function handleContextMenu(e: React.MouseEvent) {
     const hasFileActions = !node.isDir && (onRenameFile || onDeleteFile)
-    const hasFolderActions = node.isDir && (onCreateFile || onCreateFolder || onRenameFolder)
+    const hasFolderActions = node.isDir && (onCreateFile || onCreateFolder || onRenameFolder || onDeleteFolder)
     if (!hasFileActions && !hasFolderActions) return
     e.preventDefault()
     e.stopPropagation()
@@ -184,11 +191,56 @@ function TreeItem({
     setRenaming(false)
   }
 
+  function handleDragStart(e: React.DragEvent) {
+    if (node.isDir || !node.file || !onMoveFile) return
+    e.stopPropagation()
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("application/x-engei-file-id", node.file.id)
+    e.dataTransfer.setData("application/x-engei-file-path", node.file.path)
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    if (!node.isDir || !onMoveFile) return
+    if (!Array.from(e.dataTransfer.types).includes("application/x-engei-file-id")) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    if (!dragOver) setDragOver(true)
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    if (!node.isDir) return
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const { clientX: x, clientY: y } = e
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setDragOver(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    if (!node.isDir || !onMoveFile) return
+    e.preventDefault()
+    e.stopPropagation()
+    setDragOver(false)
+    const fileId = e.dataTransfer.getData("application/x-engei-file-id")
+    const filePath = e.dataTransfer.getData("application/x-engei-file-path")
+    if (!fileId || !filePath) return
+    const name = filePath.split("/").pop()!
+    const newPath = `${node.path}/${name}`
+    if (newPath === filePath) return
+    onMoveFile(fileId, newPath)
+    if (!isOpen) toggle(node.path)
+  }
+
   return (
     <div className="koen-tree-node">
       <div
-        className={`koen-tree-row ${node.isDir ? "dir" : "file"} ${isActive || contextMenu ? "active" : ""}`}
+        className={`koen-tree-row ${node.isDir ? "dir" : "file"} ${isActive || contextMenu ? "active" : ""} ${dragOver ? "drag-over" : ""}`}
         style={{ paddingLeft: `${depth * 12 + 8}px` }}
+        draggable={!node.isDir && !!onMoveFile && !renaming}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
       >
@@ -220,6 +272,9 @@ function TreeItem({
           {node.isDir && onRenameFolder && (
             <button onClick={() => { setContextMenu(null); setRenaming(true) }}>Rename</button>
           )}
+          {node.isDir && onDeleteFolder && (
+            <button onClick={() => { setContextMenu(null); onDeleteFolder(node.path) }}>Delete</button>
+          )}
           {!node.isDir && onRenameFile && (
             <button onClick={() => { setContextMenu(null); setRenaming(true) }}>Rename</button>
           )}
@@ -242,6 +297,8 @@ function TreeItem({
               onCreateFile={onCreateFile}
               onCreateFolder={onCreateFolder}
               onRenameFolder={onRenameFolder}
+              onDeleteFolder={onDeleteFolder}
+              onMoveFile={onMoveFile}
             />
           ))}
         </div>
@@ -252,8 +309,9 @@ function TreeItem({
 
 // ─── FileTree component ─────────────────────────────────────
 
-export default function FileTree({ files, folders, activePath, title, indent = 0, onFileSelect, onRenameFile, onDeleteFile, onCreateFile, onCreateFolder, onRenameFolder }: FileTreeProps) {
+export default function FileTree({ files, folders, activePath, title, indent = 0, onFileSelect, onRenameFile, onDeleteFile, onCreateFile, onCreateFolder, onRenameFolder, onDeleteFolder, onMoveFile }: FileTreeProps) {
   const tree = buildTree(files, folders)
+  const [rootDragOver, setRootDragOver] = useState(false)
 
   const treeItems = tree.map(node => (
     <TreeItem
@@ -267,13 +325,52 @@ export default function FileTree({ files, folders, activePath, title, indent = 0
       onCreateFile={onCreateFile}
       onCreateFolder={onCreateFolder}
       onRenameFolder={onRenameFolder}
+      onDeleteFolder={onDeleteFolder}
+      onMoveFile={onMoveFile}
     />
   ))
+
+  function handleRootDragOver(e: React.DragEvent) {
+    if (!onMoveFile) return
+    if (!Array.from(e.dataTransfer.types).includes("application/x-engei-file-id")) return
+    if ((e.target as HTMLElement).closest(".koen-tree-row.dir")) {
+      if (rootDragOver) setRootDragOver(false)
+      return
+    }
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    if (!rootDragOver) setRootDragOver(true)
+  }
+
+  function handleRootDragLeave(e: React.DragEvent) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const { clientX: x, clientY: y } = e
+    if (x < rect.left || x >= rect.right || y < rect.top || y >= rect.bottom) {
+      setRootDragOver(false)
+    }
+  }
+
+  function handleRootDrop(e: React.DragEvent) {
+    if (!onMoveFile) return
+    e.preventDefault()
+    setRootDragOver(false)
+    const fileId = e.dataTransfer.getData("application/x-engei-file-id")
+    const filePath = e.dataTransfer.getData("application/x-engei-file-path")
+    if (!fileId || !filePath) return
+    const name = filePath.split("/").pop()!
+    if (name === filePath) return // already at root
+    onMoveFile(fileId, name)
+  }
 
   return (
     <div className="koen-file-tree">
       {title && <div className="koen-tree-title">{title}</div>}
-      <div className="koen-tree-list">
+      <div
+        className={`koen-tree-list ${rootDragOver ? "drag-over-root" : ""}`}
+        onDragOver={handleRootDragOver}
+        onDragLeave={handleRootDragLeave}
+        onDrop={handleRootDrop}
+      >
         {treeItems}
       </div>
     </div>

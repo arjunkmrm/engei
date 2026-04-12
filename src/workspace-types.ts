@@ -74,8 +74,12 @@ export interface WorkspaceProps {
   onCreateFolder?: () => void
   /** Called when user renames a folder from the context menu */
   onRenameFolder?: (oldPath: string, newPath: string) => void
+  /** Called when user deletes a folder from the context menu */
+  onDeleteFolder?: (path: string) => void
   /** Called when user renames a file from the context menu */
   onRenameFile?: (fileId: string, newPath: string) => void
+  /** Called when user drags a file onto a folder (or workspace root) */
+  onMoveFile?: (fileId: string, newPath: string) => void
   /** Called when user deletes a file from the context menu */
   onDeleteFile?: (fileId: string) => void
   /** Content to show when no file is selected */

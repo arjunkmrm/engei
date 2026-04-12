@@ -44,6 +44,16 @@
   background: var(--hover-bg-strong);
 }
 
+.koen-tree-row.drag-over {
+  background: rgba(128, 128, 128, 0.18);
+}
+
+.koen-tree-list.drag-over-root {
+  background: rgba(128, 128, 128, 0.10);
+  border-radius: 6px;
+}
+
+
 .koen-tree-row.dir {
   font-weight: 500;
 }

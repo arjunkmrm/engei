@@ -11,7 +11,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import Editor from "./Editor"
 import FileTree from "./tree/FileTree"
 import { useFileTreeStore } from "./tree/store"
-import { getDefaultWidgets } from "engei-widgets"
+import { getDefaultWidgets } from "@engei/bonsai"
 import type { Anchor, Comment } from "./types"
 import type { TreeFile } from "./tree/FileTree"
 import type { WorkspaceProps, WorkspaceFile, WorkspaceEventType, WorkspaceSwitcherConfig } from "./workspace-types"
@@ -189,8 +189,10 @@ export default function Workspace({
   onCreateFile,
   onCreateFolder,
   onRenameFolder,
+  onDeleteFolder,
   onRenameFile,
   onDeleteFile,
+  onMoveFile,
 }: WorkspaceProps) {
   const [internalFiles, setInternalFiles] = useState<WorkspaceFile[]>(files)
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 640 : true)
@@ -493,6 +495,8 @@ export default function Workspace({
           onCreateFile={onCreateFile}
           onCreateFolder={onCreateFolder}
           onRenameFolder={onRenameFolder}
+          onDeleteFolder={onDeleteFolder}
+          onMoveFile={onMoveFile}
         />
       </div>
       <div className="workspace-main" style={{ position: "relative" }}>
