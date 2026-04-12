@@ -4,6 +4,14 @@ import path from "path"
 import fs from "fs"
 
 export default defineConfig({
+  resolve: {
+    dedupe: ["@codemirror/search", "@codemirror/state", "@codemirror/view", "codemirror"],
+    alias: {
+      "@codemirror/search": path.resolve(__dirname, "../node_modules/@codemirror/search"),
+      "@codemirror/state": path.resolve(__dirname, "../node_modules/@codemirror/state"),
+      "@codemirror/view": path.resolve(__dirname, "../node_modules/@codemirror/view"),
+    },
+  },
   plugins: [
     react(),
     // Serve fixture files from the forks directory for Playwright tests

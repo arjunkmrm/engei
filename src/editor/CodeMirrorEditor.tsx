@@ -7,9 +7,10 @@
 import { useEffect, useRef, useCallback } from "react"
 import { EditorView, basicSetup } from "codemirror"
 import { keymap } from "@codemirror/view"
-// indentWithTab replaced by smartTab/smartShiftTab in markdownKeymap
 import { EditorState, Compartment, Prec } from "@codemirror/state"
 import { indentUnit } from "@codemirror/language"
+import { search, openSearchPanel, SearchQuery, setSearchQuery, findNext as cmFindNext, findPrevious as cmFindPrevious } from "@codemirror/search"
+import { EditorSelection } from "@codemirror/state"
 import { buildSonoTheme, getSyntaxHighlighting } from "./theme"
 import { getLanguage, getLanguageAsync } from "./languages"
 import { markdownKeymap, typographicReplacements } from "./markdown-commands"
@@ -17,8 +18,9 @@ import { slashCommands, slashCommandHandler, type SlashCommandHandler } from "./
 import { commentField, setComments } from "../comments/CommentDecoration"
 import { resolveAnchor } from "../comments/anchoring"
 import { liveDefaults } from "./live"
+import { useSearchStore } from "../search/store"
 import type { Comment } from "../types"
-import type { WidgetPlugin } from "engei-widgets"
+import type { WidgetPlugin } from "@engei/bonsai"
 
 interface Props {
   content: string
@@ -59,6 +61,9 @@ export default function CodeMirrorEditor({
   const syntaxComp = useRef(new Compartment())
   const langComp = useRef(new Compartment())
 
+  const searchOpenRef = useRef(useSearchStore.getState().setOpen)
+  searchOpenRef.current = useSearchStore.getState().setOpen
+
   // Create/destroy editor when filename changes (language requires rebuild)
   useEffect(() => {
     if (!containerRef.current) return
@@ -66,6 +71,15 @@ export default function CodeMirrorEditor({
     viewRef.current?.destroy()
 
     const extensions = [
+      Prec.highest(keymap.of([
+        { key: "Mod-f", run: () => { searchOpenRef.current(true); return true } },
+      ])),
+      search({
+        createPanel: () => ({
+          dom: document.createElement("span"),
+          top: true,
+        }),
+      }),
       basicSetup,
       indentUnit.of("    "),
       Prec.high(keymap.of(markdownKeymap)),
@@ -90,6 +104,39 @@ export default function CodeMirrorEditor({
     const state = EditorState.create({ doc: content, extensions })
     const view = new EditorView({ state, parent: containerRef.current })
     viewRef.current = view
+    openSearchPanel(view)
+
+    useSearchStore.getState().setOps({
+      applyQuery: (v, term) => {
+        const query = new SearchQuery({ search: term, literal: true })
+        v.dispatch({
+          effects: setSearchQuery.of(query),
+          selection: EditorSelection.cursor(0),
+        })
+        if (term) cmFindNext(v)
+      },
+      findNext: (v) => cmFindNext(v),
+      findPrevious: (v) => cmFindPrevious(v),
+      clearQuery: (v) => {
+        v.dispatch({ effects: setSearchQuery.of(new SearchQuery({ search: "" })) })
+      },
+      countMatches: (v, term) => {
+        if (!term) return { current: 0, total: 0 }
+        const query = new SearchQuery({ search: term, literal: true })
+        const cursor = query.getCursor(v.state)
+        let count = 0, currentIdx = 0
+        const selFrom = v.state.selection.main.from
+        const selTo = v.state.selection.main.to
+        while (true) {
+          const result = cursor.next()
+          if (result.done) break
+          count++
+          if (result.value.from === selFrom && result.value.to === selTo) currentIdx = count
+        }
+        return { current: count > 0 ? (currentIdx || 1) : 0, total: count }
+      },
+    })
+
     onViewReady?.(view)
 
     // Async-load non-markdown languages into the compartment

@@ -7,14 +7,17 @@
  * For lower-level control, use Editor + FileTree directly.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import Editor from "./Editor"
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react"
+import Editor, { type EditorHandle } from "./Editor"
 import FileTree from "./tree/FileTree"
 import { useFileTreeStore } from "./tree/store"
+import { useSearchStore } from "./search/store"
 import { getDefaultWidgets } from "@engei/bonsai"
 import type { Anchor, Comment } from "./types"
 import type { TreeFile } from "./tree/FileTree"
 import type { WorkspaceProps, WorkspaceFile, WorkspaceEventType, WorkspaceSwitcherConfig } from "./workspace-types"
+
+const SearchBar = lazy(() => import("./search/SearchBar"))
 
 const defaultWidgets = getDefaultWidgets()
 
@@ -198,18 +201,26 @@ export default function Workspace({
   const [sidebarOpen, setSidebarOpen] = useState(typeof window !== "undefined" ? window.innerWidth > 640 : true)
   const [markdownMode, setMarkdownMode] = useState<"source" | "preview" | "live">(initialMarkdownMode)
   const [copied, setCopied] = useState(false)
+  const editorRef = useRef<EditorHandle>(null)
+  const searchOpen = useSearchStore((s) => s.open)
+  const setSearchOpen = useSearchStore((s) => s.setOpen)
 
-  // Cmd+1/2/3 to switch mode
+  // Cmd+1/2/3 to switch mode, Cmd+F to open search
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return
       if (e.key === "1") { e.preventDefault(); setMarkdownMode("source") }
       else if (e.key === "2") { e.preventDefault(); setMarkdownMode("live") }
       else if (e.key === "3") { e.preventDefault(); setMarkdownMode("preview") }
+      else if (e.key === "f") {
+        e.preventDefault()
+        if (markdownMode === "preview") setMarkdownMode("live")
+        setSearchOpen(true)
+      }
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [])
+  }, [markdownMode, setSearchOpen])
   const [showCreateWs, setShowCreateWs] = useState(false)
   const [newWsName, setNewWsName] = useState("")
 
@@ -579,9 +590,15 @@ export default function Workspace({
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
           </button>
         </header>
+        {searchOpen && (
+          <Suspense fallback={null}>
+            <SearchBar editorRef={editorRef} />
+          </Suspense>
+        )}
         <div className="workspace-editor">
           {file ? (
             <Editor
+              ref={editorRef}
               content={file.content}
               filename={file.path}
               comments={markdownMode === "preview" ? file.comments : []}

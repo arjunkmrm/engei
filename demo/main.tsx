@@ -4,6 +4,8 @@ import { Editor, getDefaultWidgets, type EditorHandle } from "../src/index"
 import { enablePretext, setPretextWidth } from "@codemirror/view"
 import { toggleBold, toggleItalic, toggleCode, toggleStrikethrough } from "../src/editor/markdown-commands"
 import { indentWithTab } from "@codemirror/commands"
+import SearchBar from "../src/search/SearchBar"
+import { useSearchStore } from "../src/search/store"
 import "../src/styles/engei.css"
 
 declare global {
@@ -189,6 +191,7 @@ Normal paragraph to end.
 const fixtureParam = new URLSearchParams(window.location.search).get("fixture")
 
 function App() {
+  const searchOpen = useSearchStore((s) => s.open)
   const [content, setContent] = useState(SAMPLE_MD)
   const [fixtureLoaded, setFixtureLoaded] = useState(false)
 
@@ -210,6 +213,7 @@ function App() {
   // Expose EditorView + commands on window for Playwright tests
   useEffect(() => {
     window.__commands = { toggleBold, toggleItalic, toggleCode, toggleStrikethrough, indentWithTab }
+    ;(window as any).__searchStore = useSearchStore
     const poll = setInterval(() => {
       const view = editorHandle.current?.getView()
       if (view) {
@@ -257,7 +261,8 @@ function App() {
           <option value="light">Light</option>
         </select>
       </div>
-      <div id="editor-root" ref={editorRef} style={{ flex: 1, minHeight: 0 }}>
+      <div id="editor-root" ref={editorRef} style={{ flex: 1, minHeight: 0, position: "relative" }}>
+        {searchOpen && <SearchBar editorRef={editorHandle} />}
         <Editor
           ref={editorHandle}
           content={content}

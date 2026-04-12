@@ -1,0 +1,86 @@
+/* ─── Hide CM's native search panel ──────────────────────── */
+
+.cm-search {
+  display: none !important;
+}
+
+/* ─── Search bar ─────────────────────────────────────────── */
+
+.engei-search-bar {
+  position: absolute;
+  top: 44px;
+  right: 16px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  width: 320px;
+  background: var(--widget-bg);
+  border: 1px solid var(--widget-border);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  color: var(--editor-fg);
+  box-sizing: border-box;
+}
+
+.engei-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--editor-fg);
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 4px 6px;
+}
+
+.engei-search-input::placeholder {
+  color: var(--editor-fg);
+  opacity: 0.3;
+}
+
+.engei-search-count {
+  color: var(--tab-fg-inactive);
+  font-size: 11px;
+  white-space: nowrap;
+  min-width: 44px;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.engei-search-btn {
+  background: none;
+  border: none;
+  color: var(--editor-fg);
+  opacity: 0.4;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.engei-search-btn:hover {
+  opacity: 1;
+  background: var(--hover-bg);
+}
+
+/* ─── CM6 match highlight overrides ──────────────────────── */
+
+.cm-searchMatch {
+  background: var(--search-match-bg) !important;
+  border-radius: 2px;
+}
+
+.cm-searchMatch-selected {
+  background: var(--search-match-active-bg) !important;
+}
+
+.cm-selectionMatch {
+  background: var(--search-match-bg) !important;
+}

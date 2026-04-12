@@ -26,6 +26,8 @@
   --hover-bg-strong: rgba(128, 128, 128, 0.18);
   --indent-guide: rgba(193, 95, 60, 0.15);
   --fern-cmd-color: rgba(130, 230, 130, 0.8);
+  --search-match-bg: rgba(255, 213, 0, 0.2);
+  --search-match-active-bg: rgba(255, 100, 0, 0.6);
 }
 
 .koen-editor[data-theme="light"] {
@@ -53,4 +55,6 @@
   --hover-bg-strong: rgba(128, 128, 128, 0.16);
   --indent-guide: rgba(193, 95, 60, 0.15);
   --fern-cmd-color: #3a7a2a;
+  --search-match-bg: rgba(255, 213, 0, 0.25);
+  --search-match-active-bg: rgba(255, 213, 0, 0.5);
 }
