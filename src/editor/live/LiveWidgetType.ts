@@ -13,8 +13,8 @@
 
 import { WidgetType, EditorView } from "@codemirror/view"
 import { syntaxTree } from "@codemirror/language"
-import type { WidgetPlugin, WidgetSpec } from "engei-widgets"
-import { addExpandButton } from "engei-widgets"
+import type { WidgetPlugin, WidgetSpec } from "@engei/bonsai"
+import { addExpandButton } from "@engei/bonsai"
 import { widgetSaveBack } from "./extensions/widgets"
 
 // ─── Spec cache ─────────────────────────────────────────────
@@ -156,14 +156,19 @@ export class LiveWidgetType extends WidgetType {
   }
 
   updateDOM(dom: HTMLElement, view: EditorView): boolean {
-    // If eq() returned false but we get here, the code or theme changed.
-    // Re-hydrate into the same container.
+    // Reject cross-type updates — CM6 may pair widgets of different types
+    // during decoration set diffs when the set changes size. Returning false
+    // tells CM6 to discard this DOM and call toDOM() for a fresh element.
+    if (dom.getAttribute("data-widget-type") !== this.plugin.type) return false
+
+    // Same type, code or theme changed — re-hydrate into the same container.
     if (this.cleanup) {
       this.cleanup()
       this.cleanup = null
     }
 
     dom.innerHTML = ""
+    dom.setAttribute("data-widget-type", this.plugin.type)
     const spec = getSpec(this.plugin, this.code, this.position)
     if (!spec) return false
 
