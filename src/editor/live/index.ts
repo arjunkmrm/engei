@@ -7,7 +7,7 @@
  */
 
 import type { Extension } from "@codemirror/state"
-import type { WidgetPlugin } from "engei-widgets"
+import type { WidgetPlugin } from "@engei/bonsai"
 
 import { headings } from "./extensions/headings"
 import { emphasis } from "./extensions/emphasis"
@@ -20,6 +20,7 @@ import { blockquotes } from "./extensions/blockquotes"
 import { tasks } from "./extensions/tasks"
 import { horizontalRules } from "./extensions/horizontalRules"
 import { listIndent } from "./extensions/listIndent"
+import { inlineMath } from "./extensions/inlineMath"
 
 /** Bundle all live editing extensions with shared defaults. */
 export function liveDefaults(opts?: {
@@ -47,6 +48,7 @@ export function liveDefaults(opts?: {
     tasks(mc ? { markerClass: mc } : undefined),
     horizontalRules(),
     listIndent(),
+    inlineMath({ theme }),
   ]
 }
 
@@ -62,6 +64,7 @@ export { blockquotes } from "./extensions/blockquotes"
 export { tasks } from "./extensions/tasks"
 export { horizontalRules } from "./extensions/horizontalRules"
 export { listIndent } from "./extensions/listIndent"
+export { inlineMath } from "./extensions/inlineMath"
 
 // Re-export cursor utilities for custom extension authors
 export { selectionOverlaps, cursorOnLine } from "./cursor"

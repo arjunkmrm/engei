@@ -5,7 +5,7 @@
  */
 
 import type { WidgetPlugin } from "../types"
-import { chartPlugin, mermaidPlugin, diffPlugin, globePlugin } from "engei-widgets"
+import { chartPlugin, mermaidPlugin, diffPlugin, globePlugin, mathplotPlugin } from "@engei/bonsai"
 
 export type WidgetHydrator = (
   container: HTMLElement,
@@ -37,7 +37,7 @@ export function buildLangMap(plugins: WidgetPlugin[]): Map<string, WidgetPlugin>
 
 // ─── Default built-in widgets ───────────────────────────────
 
-const _defaults: WidgetPlugin[] = [chartPlugin, mermaidPlugin, diffPlugin, globePlugin]
+const _defaults: WidgetPlugin[] = [chartPlugin, mermaidPlugin, diffPlugin, globePlugin, mathplotPlugin]
 
 export function getDefaultWidgets(): WidgetPlugin[] {
   return _defaults
@@ -73,6 +73,19 @@ export function hydrateWidgets(
       el.textContent = `Widget error: ${err}`
       el.style.color = "var(--color-text-danger, #e06c75)"
     }
+  }
+
+  // Hydrate inline math spans ($...$)
+  const mathSpans = container.querySelectorAll<HTMLElement>("[data-math-spec]")
+  for (const el of mathSpans) {
+    try {
+      const spec = JSON.parse(el.getAttribute("data-math-spec")!)
+      const hydrator = registry.get("katex")
+      if (hydrator) {
+        const cleanup = hydrator(el, spec, theme)
+        if (cleanup) cleanups.push(cleanup)
+      }
+    } catch { /* skip malformed */ }
   }
 
   return cleanups

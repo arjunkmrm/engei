@@ -83,11 +83,42 @@ export function parseWithPositions(
   // Extract footnote definitions and replace markers before parsing
   const { processedSource, footnotesHtml } = processFootnotes(mdSource)
 
-  const tokens = marked.lexer(processedSource)
+  // Extract math expressions before marked can mangle backslashes.
+  // Replace with placeholders, restore after parsing.
+  const mathStore: { id: string; expr: string; display: boolean }[] = []
+  let mathSource = processedSource
+
+  // $$...$$ display math first (greedy match to avoid inner $ conflicts)
+  mathSource = mathSource.replace(/\$\$([^$]+?)\$\$/g, (_match, expr) => {
+    const id = `MATH_BLOCK_${mathStore.length}`
+    mathStore.push({ id, expr: expr.trim(), display: true })
+    return id
+  })
+  // $...$ inline math
+  mathSource = mathSource.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, (_match, expr) => {
+    const id = `MATH_INLINE_${mathStore.length}`
+    mathStore.push({ id, expr: expr.trim(), display: false })
+    return id
+  })
+
+  const tokens = marked.lexer(mathSource)
   const offset = source.length - mdSource.length
-  walkWithPosition(tokens, processedSource, 0, offset)
+  walkWithPosition(tokens, mathSource, 0, offset)
   const renderer = buildPositionRenderer(widgetLangs)
-  return frontmatterHtml + marked.parser(tokens, { renderer }) + footnotesHtml
+  let html = frontmatterHtml + marked.parser(tokens, { renderer }) + footnotesHtml
+
+  // Restore math placeholders with hydration-ready elements
+  for (const { id, expr, display } of mathStore) {
+    if (display) {
+      const spec = escapeHtml(JSON.stringify({ widgetId: `katex-${id}`, type: "katex", expression: expr, display: true }))
+      html = html.replace(id, `<div class="koen-widget-placeholder" data-widget-spec="${spec}"></div>`)
+    } else {
+      const spec = escapeHtml(JSON.stringify({ type: "katex", expression: expr, display: false }))
+      html = html.replace(id, `<span class="koen-inline-math" data-math-spec="${spec}"></span>`)
+    }
+  }
+
+  return html
 }
 
 // ─── Footnote / citation support ──────────────────────────────
