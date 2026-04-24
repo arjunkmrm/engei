@@ -1,6 +1,6 @@
 {
   "name": "engei",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "React code editor with inline comments, markdown preview, and extensible widgets. Built on CodeMirror 6.",
   "type": "module",
   "license": "MIT",
@@ -72,7 +72,7 @@
     "boring-avatars": "^2.0.4",
     "codemirror": "^6.0.2",
     "dompurify": "^3.3.3",
-    "@engei/bonsai": "file:../bonsai",
+    "@engei/bonsai": "^0.2.0",
     "marked": "^17.0.3",
     "zustand": "^5.0.12"
   },
