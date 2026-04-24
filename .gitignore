@@ -5,6 +5,7 @@ dist
 .todos.txt
 .autobuild/
 .autoresearch/
+test-results/
 
 # wrangler files
 .wrangler
