@@ -6,8 +6,8 @@
 import { createAnchor, resolveAnchor, resolveAnchors } from "../comments/anchoring"
 import { parseWithPositions, wrapSourceRange, clearHighlights, domRangeToSourceRange } from "../preview/markedPositions"
 import { applyHighlights } from "../preview/usePreviewHighlights"
-import { buildWidgetRegistry, buildLangMap, hydrateWidgets, getDefaultWidgets } from "engei-widgets"
-import type { WidgetPlugin } from "engei-widgets"
+import { buildWidgetRegistry, buildLangMap, hydrateWidgets, getDefaultWidgets } from "@engei/bonsai"
+import type { WidgetPlugin } from "@engei/bonsai"
 import { renderMarkdown } from "../sanitize"
 
 // ─── Journey 1: Comment lifecycle ────────────────────────────

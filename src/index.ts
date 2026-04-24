@@ -23,7 +23,7 @@ export { commentField, setComments, addComment, removeComment, getCommentRanges 
 // Markdown utilities moved to lazy MarkdownPreview chunk.
 // Import directly from "engei/preview" if needed.
 
-// Widget system (re-exported from engei-widgets)
+// Widget system (re-exported from @engei/bonsai)
 export {
   hydrateWidgets,
   buildWidgetRegistry,
@@ -41,8 +41,8 @@ export {
   timelinePlugin,
   calendarPlugin,
   htmlPlugin,
-} from "engei-widgets"
-export type { WidgetSpec, WidgetHydrator } from "engei-widgets"
+} from "@engei/bonsai"
+export type { WidgetSpec, WidgetHydrator } from "@engei/bonsai"
 
 // Live editing extensions (composable CM6 extensions)
 export { liveDefaults, headings, emphasis, strikethrough, tables, codeBlocks, images, widgetExtension, blockquotes, tasks, horizontalRules, listIndent, selectionOverlaps, cursorOnLine } from "./editor/live"

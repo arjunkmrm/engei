@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "sono-editor",
@@ -18,11 +17,11 @@
         "@codemirror/lang-rust": "^6.0.2",
         "@codemirror/language": "^6.12.1",
         "@codemirror/view": "npm:pretext-codemirror-view@6.40.0-pretext.1",
+        "@engei/bonsai": "file:../bonsai",
         "@lezer/highlight": "^1.2.3",
         "boring-avatars": "^2.0.4",
         "codemirror": "^6.0.2",
         "dompurify": "^3.3.3",
-        "engei-widgets": "file:../engei-widgets",
         "loading-games": "file:../loading-games",
         "marked": "^17.0.3",
         "zustand": "^5.0.12",
@@ -170,6 +169,8 @@
     "@csstools/css-tokenizer": ["@csstools/css-tokenizer@4.0.0", "", {}, "sha512-QxULHAm7cNu72w97JUNCBFODFaXpbDg+dP8b/oWFAZ2MTRppA3U00Y2L1HqaS4J6yBqxwa/Y3nMBaxVKbB/NsA=="],
 
     "@emnapi/runtime": ["@emnapi/runtime@1.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-QN75eB0IH2ywSpRpNddCRfQIhmJYBCJ1x5Lb3IscKAL8bMnVAKnRg8dCoXbHzVLLH7P38N2Z3mtulB7W0J0FKw=="],
+
+    "@engei/bonsai": ["@engei/bonsai@file:../bonsai", { "dependencies": { "diff": "^8.0.3", "dompurify": "^3.3.3", "highlight.js": "^11.11.1" }, "devDependencies": { "@types/dompurify": "^3.0.5", "typescript": "^5.7.0", "vite": "^7.0.4", "vite-plugin-dts": "^4.5.0" } }],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.4", "", { "os": "aix", "cpu": "ppc64" }, "sha512-cQPwL2mp2nSmHHJlCyoXgHGhbEPMrEEU5xhkcy3Hs/O7nGZqEpZ2sUtLaL9MORLtDfRvVl2/3PAuEkYZH0Ty8Q=="],
 
@@ -542,8 +543,6 @@
     "dompurify": ["dompurify@3.3.3", "", { "optionalDependencies": { "@types/trusted-types": "^2.0.7" } }, "sha512-Oj6pzI2+RqBfFG+qOaOLbFXLQ90ARpcGG6UePL82bJLtdsa6CYJD7nmiU8MW9nQNOtCHV3lZ/Bzq1X0QYbBZCA=="],
 
     "electron-to-chromium": ["electron-to-chromium@1.5.313", "", {}, "sha512-QBMrTWEf00GXZmJyx2lbYD45jpI3TUFnNIzJ5BBc8piGUDwMPa1GV6HJWTZVvY/eiN3fSopl7NRbgGp9sZ9LTA=="],
-
-    "engei-widgets": ["engei-widgets@file:../engei-widgets", { "dependencies": { "diff": "^8.0.3", "highlight.js": "^11.11.1" }, "devDependencies": { "typescript": "^5.7.0", "vite": "^7.0.4", "vite-plugin-dts": "^4.5.0" } }],
 
     "entities": ["entities@6.0.1", "", {}, "sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g=="],
 

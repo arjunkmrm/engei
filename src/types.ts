@@ -1,5 +1,5 @@
-import type { WidgetPlugin as _WidgetPlugin } from "engei-widgets"
-export type { WidgetPlugin, WidgetHydrator, WidgetSpec } from "engei-widgets"
+import type { WidgetPlugin as _WidgetPlugin } from "@engei/bonsai"
+export type { WidgetPlugin, WidgetHydrator, WidgetSpec } from "@engei/bonsai"
 
 type WidgetPlugin = _WidgetPlugin
 

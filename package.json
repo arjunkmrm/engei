@@ -72,7 +72,7 @@
     "boring-avatars": "^2.0.4",
     "codemirror": "^6.0.2",
     "dompurify": "^3.3.3",
-    "engei-widgets": "file:../engei-widgets",
+    "@engei/bonsai": "file:../bonsai",
     "marked": "^17.0.3",
     "zustand": "^5.0.12"
   },

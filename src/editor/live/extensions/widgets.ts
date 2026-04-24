@@ -2,7 +2,7 @@ import { syntaxTree } from "@codemirror/language"
 import { Decoration, EditorView } from "@codemirror/view"
 import { Annotation, StateField, type Extension, type Range, type EditorState } from "@codemirror/state"
 import type { DecorationSet } from "@codemirror/view"
-import type { WidgetPlugin } from "engei-widgets"
+import type { WidgetPlugin } from "@engei/bonsai"
 import { LiveWidgetType } from "../LiveWidgetType"
 
 /** Annotation to tag save-back transactions from widgets, so we skip rebuilding decorations. */
