@@ -1,6 +1,6 @@
 {
   "name": "engei",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "React code editor with inline comments, markdown preview, and extensible widgets. Built on CodeMirror 6.",
   "type": "module",
   "license": "MIT",
@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@chenglou/pretext": "0.0.3",
-    "loading-games": "file:../loading-games",
+    "@engei/loading-games": "^0.1.0",
     "@cloudflare/workerd-darwin-arm64": "^1.20260317.1",
     "@codemirror/autocomplete": "^6.20.0",
     "@codemirror/commands": "^6.8.0",

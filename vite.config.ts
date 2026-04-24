@@ -21,7 +21,7 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        "react", "react-dom", "react/jsx-runtime", "@engei/bonsai",
+        "react", "react-dom", "react/jsx-runtime", "@engei/bonsai", "@engei/loading-games",
         // Externalize CodeMirror so the consuming app can code-split it
         /^codemirror/,
         /^@codemirror\//,

@@ -4,7 +4,7 @@
  */
 
 import { WidgetType } from "@codemirror/view"
-import { randomGame, createGameCanvas } from "loading-games"
+import { randomGame, createGameCanvas } from "@engei/loading-games"
 
 class GameWidget extends WidgetType {
   private game = randomGame()

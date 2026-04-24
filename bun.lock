@@ -18,11 +18,11 @@
         "@codemirror/language": "^6.12.1",
         "@codemirror/view": "npm:pretext-codemirror-view@6.40.0-pretext.1",
         "@engei/bonsai": "^0.2.0",
+        "@engei/loading-games": "^0.1.0",
         "@lezer/highlight": "^1.2.3",
         "boring-avatars": "^2.0.4",
         "codemirror": "^6.0.2",
         "dompurify": "^3.3.3",
-        "loading-games": "file:../loading-games",
         "marked": "^17.0.3",
         "zustand": "^5.0.12",
       },
@@ -171,6 +171,8 @@
     "@emnapi/runtime": ["@emnapi/runtime@1.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-QN75eB0IH2ywSpRpNddCRfQIhmJYBCJ1x5Lb3IscKAL8bMnVAKnRg8dCoXbHzVLLH7P38N2Z3mtulB7W0J0FKw=="],
 
     "@engei/bonsai": ["@engei/bonsai@0.2.0", "", { "dependencies": { "diff": "^8.0.3", "dompurify": "^3.3.3", "highlight.js": "^11.11.1" } }, "sha512-4CNO53Ofzgc9JUDjMbRTF2y6siRkzWz5zvUS+zc5TTVfOrfkZWWvJ6h5fUtAkwf/lf11mQXALbVFwYM/PZFiHw=="],
+
+    "@engei/loading-games": ["@engei/loading-games@0.1.0", "", {}, "sha512-W/kYPv0flHw4UZRE4UWlVQMSNbXSCf/tBDXXj26DAH8pCPUduUv0YL3Bi956llLxXIMefbz+WcL2iv2cWdc6XQ=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.27.4", "", { "os": "aix", "cpu": "ppc64" }, "sha512-cQPwL2mp2nSmHHJlCyoXgHGhbEPMrEEU5xhkcy3Hs/O7nGZqEpZ2sUtLaL9MORLtDfRvVl2/3PAuEkYZH0Ty8Q=="],
 
@@ -623,8 +625,6 @@
     "kleur": ["kleur@4.1.5", "", {}, "sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ=="],
 
     "kolorist": ["kolorist@1.8.0", "", {}, "sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ=="],
-
-    "loading-games": ["loading-games@file:../loading-games", {}],
 
     "local-pkg": ["local-pkg@1.1.2", "", { "dependencies": { "mlly": "^1.7.4", "pkg-types": "^2.3.0", "quansync": "^0.2.11" } }, "sha512-arhlxbFRmoQHl33a0Zkle/YWlmNwoyt6QNZEIJcqNbdrsix5Lvc4HyyI3EnwxTYlZYc32EbYrQ8SzEZ7dqgg9A=="],
 
