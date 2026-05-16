@@ -1,6 +1,6 @@
 {
   "name": "engei",
-  "version": "0.3.1",
+  "version": "0.3.4",
   "description": "React code editor with inline comments, markdown preview, and extensible widgets. Built on CodeMirror 6.",
   "type": "module",
   "license": "MIT",
@@ -30,9 +30,9 @@
     "./styles": "./dist/engei.css"
   },
   "files": [
-    "dist/engei.js",
-    "dist/engei.css",
-    "dist/index.d.ts",
+    "dist",
+    "!dist/wrangler.json",
+    "!dist/.assetsignore",
     "LICENSE",
     "README.md"
   ],
