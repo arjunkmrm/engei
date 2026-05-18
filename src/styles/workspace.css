@@ -19,9 +19,19 @@
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-  border-right: 1px solid var(--widget-border, #333);
   display: flex;
   flex-direction: column;
+}
+
+.workspace-sidebar::after {
+  content: "";
+  position: absolute;
+  top: 32px;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  background: var(--widget-border, #333);
+  pointer-events: none;
 }
 
 .workspace-sidebar .koen-file-tree {
@@ -36,8 +46,8 @@
   width: 240px;
 }
 
-.engei-workspace.sidebar-collapsed .workspace-sidebar {
-  border-right-color: transparent;
+.engei-workspace.sidebar-collapsed .workspace-sidebar::after {
+  background: transparent;
 }
 
 .sidebar-header {

@@ -3,10 +3,8 @@ import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import dts from "vite-plugin-dts"
 
-import { cloudflare } from "@cloudflare/vite-plugin";
-
 export default defineConfig({
-  plugins: [react(), dts({ rollupTypes: true, exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test-setup.ts"] }), cloudflare()],
+  plugins: [react(), dts({ rollupTypes: true, exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test-setup.ts"] })],
   test: {
     environment: "jsdom",
     globals: true,
@@ -27,6 +25,9 @@ export default defineConfig({
         /^@codemirror\//,
         /^@lezer\//,
       ],
+      output: {
+        inlineDynamicImports: true,
+      },
     },
   },
 })
